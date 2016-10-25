@@ -21,3 +21,7 @@
 .dirstamp
 *.o
 *~
+*.swp
+*.yy.c
+*.tab.c
+*.tab.h

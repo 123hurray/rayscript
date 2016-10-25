@@ -1,6 +1,7 @@
 #ifndef OPCODE_H
 #define OPCODE_H
-
+#include "object.h"
+#include "map_object.h"
 typedef unsigned char op_t;
 
 
@@ -9,15 +10,16 @@ typedef unsigned char op_t;
 #define D_SUB 2
 #define D_MUL 3
 #define D_DIV 4
+#define STORE_NAME 5
 
 #define PUSH 128
 #define POP 129
 #define PRINT 130
+#define LOAD_NAME 131
 
 #define HAS_OPARG(op) (op & 128)
 
 #define DEFAULT_CODE_SIZE 4
-typedef double ray_object;
 typedef struct _instr {
     unsigned char opcode;
     ray_object* oparg;
@@ -27,6 +29,8 @@ typedef struct {
     instr *code;
     int code_max_len;
     int code_len;
+    map_object* globals;
+    map_object* locals;
 } code_block;
 
 

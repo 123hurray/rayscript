@@ -5,90 +5,114 @@
 #include"visitor.h"
 #include"opcode.h"
 #include"eval.h"
-syn_node root;
-syn_node * new_syn_node(enum syntax_type type, void *val) {
-    syn_node *s = (syn_node *)malloc(sizeof(syn_node));
-    s->type = type;
-    if(s->type == EXP) {
-        s->exp = (exp_node*)val;
-    } else if(s->type == TERM) {
-        s->term = (term_node*)val;
-    } else if(s->type == FACTOR) {
-        s->factor = (factor_node*)val;
-    }
-    return s;
-}
+static ast_node* head, *cur;
 int yylex();
 int yyerror();
 %}
  /* declare tokens */
 %token NUMBER 
-%token ADD SUB MUL DIV OP CP 
+%token ADD SUB MUL DIV OP CP ASSIGN IDENTIFIER 
 %token EOL 
+%token TYPE_TERM TYPE_FACTOR
 %%
+
 calclist: 
- | calclist exp EOL {root = *$2; $$ = $2; } 
+ | calclist exp EOL {
+    cur->next = $2;
+    cur = cur->next;
+    $$ = $2; 
+} 
+ | calclist assign EOL {
+    cur->next = $2;
+    cur = cur->next;
+    $$ = $2; 
+} 
  ;
 exp: term { 
     exp_node *e = (exp_node*)malloc(sizeof(exp_node));
-    e->type = 0;
+    e->ast_type = EXP;
+    e->type = TYPE_TERM;
     e->op1 = NULL;
-    e->op2 = $1->term; 
-    $$ = new_syn_node(EXP, e);
+    e->op2 = (term_node*)$1; 
+    $$ = (ast_node *)e;
 } 
  | exp ADD term {
     exp_node *e = (exp_node*)malloc(sizeof(exp_node));
+    e->ast_type = EXP;
     e->type = ADD;
-    e->op1 = $1->exp;
-    e->op2 = $3->term; 
-    $$ = new_syn_node(EXP, e);
+    e->op1 = (exp_node*)$1;
+    e->op2 = (term_node*)$3; 
+    $$ = (ast_node *)e; 
 } 
  | exp SUB term {
     exp_node *e = (exp_node*)malloc(sizeof(exp_node));
+    e->ast_type = EXP;
     e->type = SUB;
-    e->op1 = $1->exp;
-    e->op2 = $3->term; 
-    $$ = new_syn_node(EXP, e);
+    e->op1 = (exp_node *)$1;
+    e->op2 = (term_node *)$3; 
+    $$ = (ast_node *)e;
 } 
 ;
 term: factor {
     term_node *e = (term_node*)malloc(sizeof(term_node));
-    e->type = 0;
+    e->ast_type = TERM;
+    e->type = TYPE_FACTOR;
     e->op1 = NULL;
-    e->op2 = $1->factor; 
-    $$ = new_syn_node(TERM, e);
+    e->op2 = (factor_node *)$1; 
+    $$ = (ast_node *)e;
 } 
  | term MUL factor {
     term_node *e = (term_node*)malloc(sizeof(term_node));
+    e->ast_type = TERM;
     e->type = MUL;
-    e->op1 = $1->term;
-    e->op2 = $3->factor; 
-    $$ = new_syn_node(TERM, e);
+    e->op1 = (term_node *)$1;
+    e->op2 = (factor_node *)$3; 
+    $$ = (ast_node *)e;
 } 
  | term DIV factor {
     term_node *e = (term_node*)malloc(sizeof(term_node));
+    e->ast_type = TERM;
     e->type = DIV;
-    e->op1 = $1->term;
-    e->op2 = $3->factor; 
-    $$ = new_syn_node(TERM, e);
+    e->op1 = (term_node *)$1;
+    e->op2 = (factor_node *)$3; 
+    $$ = (ast_node *)e;
 } 
 ;
 factor : NUMBER {
     $$ = $1;
-} 
- | OP exp CP   {
+}
+| IDENTIFIER {
+    factor_node *f = (factor_node*)malloc(sizeof(factor_node));
+    f->ast_type = ID;
+    f->type = ID;
+    f->val = (ray_object*)new_string_object(((identifier_node *)$1)->val);
+    $$ = (ast_node *)f;
+}
+| OP exp CP   {
     factor_node* e = (factor_node*)malloc(sizeof(factor_node));
+    e->ast_type = FACTOR;
     e->type = EXP;
-    e->exp = $2->exp;
-    $$ = new_syn_node(FACTOR, e);
-} 
+    e->exp = (exp_node *)$2;
+    $$ = (ast_node *)e;
+}
+;
+
+assign: IDENTIFIER ASSIGN exp {
+    assign_node* e = (assign_node *)malloc(sizeof(assign_node));
+    e->ast_type = ASSIGNMENT;
+    e->lval = (identifier_node *)$1;
+    e->rval = (exp_node *)$3;
+    $$ = (ast_node *)e;
+}
 ;
 %%
 int main(int argc, char **argv)
 {
+    head = (ast_node *)malloc(sizeof(ast_node));
+    cur = head;
     yyparse();
     code_block *b = init_code_block();
-    visit(b, &root);
+    visit(b, head->next);
     eval(b);
     return 0;
 }

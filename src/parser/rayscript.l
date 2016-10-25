@@ -1,6 +1,8 @@
 %{
+#include "string.h"
 #include "statement.h"
 #include "rayscript.tab.h"
+#include "object.h"
 %}
 
 %%
@@ -11,20 +13,26 @@
 "("                                  { return OP;     }
 ")"                                  { return CP;     }
 \n                                   { return EOL;    } 
+"="                                  { return ASSIGN; }
 [ t]                                 { /* ignore */   } 
 ([0-9]*\.?[0-9]+|[0-9]+\.[0-9]*)     { 
-    double *v = (double *)malloc(sizeof(double));
-    *v  =atof(yytext);
     factor_node *f = (factor_node*)malloc(sizeof(factor_node));
+    f->ast_type = NUM;
     f->type = NUM;
-    f->val = v;
-    syn_node *s = (syn_node*)malloc(sizeof(syn_node));
-    s->type = FACTOR;
-    s->factor = f; 
-    yylval = s;
-    
-return NUMBER; } 
+    f->val = (ray_object*)new_number_object(atof(yytext));
+    yylval = (ast_node *)f;
+    return NUMBER; 
+} 
 
+([a-zA-Z_][a-zA-Z0-9]*)                      {
+    char *str = (char *)malloc(strlen(yytext));
+    strcpy(str, yytext);
+    identifier_node* e = (identifier_node *)malloc(sizeof(identifier_node));
+    e->ast_type = ID;
+    e->val = str;
+    yylval = (ast_node *)e;
+    return IDENTIFIER;
+}
 
 %%
 

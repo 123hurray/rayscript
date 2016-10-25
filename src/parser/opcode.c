@@ -1,6 +1,7 @@
 #include<stdlib.h>
 #include<memory.h>
 #include"opcode.h"
+#include"map_object.h"
 
 static double scale_factor = 1.5;
 
@@ -10,6 +11,9 @@ code_block * init_code_block() {
     c->code = (instr *)malloc(DEFAULT_CODE_SIZE * sizeof(instr));
     memset(c->code, 0, DEFAULT_CODE_SIZE);
     c->code_len = 0;
+    c->globals = new_map_object(1);
+    c->locals = new_map_object(1);
+    return c;
 }
 
 
