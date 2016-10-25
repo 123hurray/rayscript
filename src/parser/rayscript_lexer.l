@@ -1,8 +1,8 @@
 %{
-#include "string.h"
-#include "statement.h"
-#include "rayscript.tab.h"
-#include "object.h"
+#include <string.h>
+#include <statement.h>
+#include <rayscript.tab.h>
+#include <object.h>
 %}
 
 %%

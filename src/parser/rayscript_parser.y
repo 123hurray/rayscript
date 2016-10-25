@@ -1,10 +1,10 @@
 %{
-#include<stdio.h>
-#include<stdlib.h>
-#include"statement.h"
-#include"visitor.h"
-#include"opcode.h"
-#include"eval.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <statement.h>
+#include <visitor.h>
+#include <opcode.h>
+#include <eval.h>
 static ast_node* head, *cur;
 int yylex();
 int yyerror();

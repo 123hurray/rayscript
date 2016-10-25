@@ -17,6 +17,8 @@ AC_HEADER_STDC
 
 # Checks for library functions.
 AC_FUNC_MALLOC
+AC_PROG_LEX
+AC_PROG_YACC
 
 AC_CONFIG_FILES([
     Makefile
