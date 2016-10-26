@@ -7,8 +7,15 @@ void eval(compiler *);
 
 #define HANDLE(op) \
 HANDLE_##op: \
-case op:
+case op:\
+DEBUG_OP(#op);
 
+
+
+
+#define DEBUG_OP(v) {\
+    printf(v"\n");\
+}
 
 #define STACK_POP() ( \
     --stack_pos,\
@@ -26,4 +33,9 @@ case op:
     ++stack_pos; \
 } while(0);
     
+#define STACK_GET(v) (\
+    (stack_pos < 1)? (\
+        fprintf(stderr, "Stack empty"), \
+        exit(-1) \
+        ):0, stack[stack_pos-1])
 #endif

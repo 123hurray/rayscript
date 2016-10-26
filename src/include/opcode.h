@@ -13,9 +13,10 @@ typedef unsigned char op_t;
 #define STORE_NAME 5
 #define JUMP_FALSE 6
 #define JUMP 7
+#define POP 8
+#define DUP 9
 
 #define PUSH 128
-#define POP 129
 #define PRINT 130
 #define LOAD_NAME 131
 

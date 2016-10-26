@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <eval.h>
 #include <vm.h>
 #include <object.h>
@@ -101,6 +102,17 @@ void eval(compiler *c) {
                 ++i;
             }
             break;
+            HANDLE(POP) {
+               STACK_POP();
+               ++i;
+            }
+            break;
+            HANDLE(DUP) {
+                ray_object *op = STACK_GET();
+                STACK_PUSH(op);
+                ++i;
+            }
+            break;
             HANDLE(JUMP) {
                 b = b->code[i].jmp_block;
                 i = 0;
@@ -108,7 +120,7 @@ void eval(compiler *c) {
             }
             break;
             HANDLE(JUMP_FALSE) {
-                ray_object *op = STACK_POP();
+                ray_object *op = STACK_GET();
                 if(NUMBER_EXACT(op)) {
                     if(NUMBER_OBJ_AS_NUMBER(op) > 0.00001
                             || NUMBER_OBJ_AS_NUMBER(op) < -0.0001) {
@@ -123,6 +135,7 @@ void eval(compiler *c) {
             }
             break;
         }
+        printf("STACK SIZE:%d\n", stack_pos);
         if(i == len) {
             b = b->next;
             i = 0;
@@ -131,6 +144,10 @@ void eval(compiler *c) {
             }
         }
     }
+
+    assert(stack_pos == 1);
+
+    printf("Execute result:%lf\n", NUMBER_OBJ_AS_NUMBER(STACK_POP()));
 }
 
 

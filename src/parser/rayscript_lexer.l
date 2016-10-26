@@ -9,36 +9,36 @@
 "if"                                 { return IF_TOKEN;}
 "else"                               { return ELSE_TOKEN;}
 "print"                              { return PRINT_TOKEN;}
+"and"                                { return AND_TOKEN; }
+"or"                                 { return OR_TOKEN;  }
+"=="                                 { return EQUALS_TOKEN;}
 "{"                                  { return LB;     }
 "}"                                  { return RB;     }
 ";"                                  { return SC;     }
 
-"+"                                  { return ADD;    } 
-"-"                                  { return SUB;    } 
-"*"                                  { return MUL;    } 
-"/"                                  { return DIV;    } 
+"+"                                  { yylval.op = OP_ADD;return OPERATOR_1;    } 
+"-"                                  { yylval.op = OP_SUB; return OPERATOR_1;   } 
+"*"                                  { yylval.op = OP_MUL;return OPERATOR_2;    } 
+"/"                                  { yylval.op = OP_DIV;return OPERATOR_2;    } 
 "("                                  { return OP;     }
 ")"                                  { return CP;     }
 \n                                   { /* ignore */    } 
 "="                                  { return ASSIGN; }
 [ t]                                 { /* ignore */   } 
-([0-9]*\.?[0-9]+|[0-9]+\.[0-9]*)     { 
-    factor_node *f = (factor_node*)malloc(sizeof(factor_node));
-    f->ast_type = FACTOR;
-    f->type = NUM;
-    f->val = (ray_object*)new_number_object(atof(yytext));
-    yylval = (ast_node *)f;
-    return NUMBER; 
-} 
 
 ([a-zA-Z_][a-zA-Z0-9]*)                      {
     char *str = (char *)malloc(strlen(yytext));
     strcpy(str, yytext);
-    identifier_node* e = (identifier_node *)malloc(sizeof(identifier_node));
-    e->ast_type = ID;
-    e->val = str;
-    yylval = (ast_node *)e;
+    yylval.str = str; 
     return IDENTIFIER;
+}
+([0-9]*\.?[0-9]+|[0-9]+\.[0-9]*)     { 
+    yylval.fnum = atof(yytext);
+    return FLOAT_TOKEN;
+} 
+([0-9]?) {
+    yylval.inum = atoi(yytext);
+    return FLOAT_TOKEN;
 }
 %%
 
