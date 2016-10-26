@@ -1,18 +1,33 @@
-#include<stdlib.h>
-#include<memory.h>
-#include"opcode.h"
-#include"map_object.h"
+#include <stdlib.h>
+#include <allocator.h>
+#include <opcode.h>
+#include <vm.h>
+#include <map_object.h>
 
 static double scale_factor = 1.5;
 
-code_block * init_code_block() {
-    code_block * c = (code_block *)malloc(sizeof(code_block));
+logic_block *new_logic_block() {
+    logic_block * lb = R_MALLOC(logic_block);
+    lb->cb = lb->head_block = new_code_block();
+    lb->globals = new_map_object(1);
+    lb->locals = new_map_object(1);
+    return lb;
+    
+}
+
+compiler* new_compiler() {
+    compiler * c = R_MALLOC(compiler);
+    c->lb = new_logic_block();
+    return c;
+
+}
+
+code_block *new_code_block() {
+    code_block * c = R_MALLOC(code_block);
     c->code_max_len = DEFAULT_CODE_SIZE;
-    c->code = (instr *)malloc(DEFAULT_CODE_SIZE * sizeof(instr));
+    c->code = R_MALLOC_N(instr, DEFAULT_CODE_SIZE);
     memset(c->code, 0, DEFAULT_CODE_SIZE);
     c->code_len = 0;
-    c->globals = new_map_object(1);
-    c->locals = new_map_object(1);
     return c;
 }
 
@@ -27,8 +42,14 @@ void ensure_size(code_block *block) {
     }
 }
 
+void use_code_block_next(compiler *c, code_block *nb) {
+    c->lb->cb->next = nb;
+    c->lb->cb = nb;
+    c->lb->cb->next = NULL;
+}
 
-void add_op(code_block * block, unsigned char op) {
+void add_op(compiler *c, unsigned char op) {
+    code_block *block = c->lb->cb;
     ensure_size(block);
     instr *i = &block->code[block->code_len];
     i->opcode = op;
@@ -36,10 +57,20 @@ void add_op(code_block * block, unsigned char op) {
     ++block->code_len;
 }
 
-void add_op_arg(code_block *block, unsigned char op, ray_object* val) {
+void add_op_arg(compiler *c, unsigned char op, ray_object* val) {
+    code_block *block = c->lb->cb;
     ensure_size(block);
     instr * i = &block->code[block->code_len];
     i->opcode = op;
     i->oparg = val;
+    ++block->code_len;
+}
+void add_op_jmp(compiler *c, unsigned char op, code_block* b) {
+    code_block *block = c->lb->cb;
+    ensure_size(block);
+    instr * i = &block->code[block->code_len];
+    i->opcode = op;
+    i->oparg = NULL;
+    i->jmp_block = b;
     ++block->code_len;
 }

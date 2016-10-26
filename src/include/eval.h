@@ -1,8 +1,9 @@
 #ifndef EVAL_H
 #define EVAL_H
-#include "opcode.h"
+#include <opcode.h>
+#include <vm.h>
 #define STACK_SIZE 100
-void eval(code_block *);
+void eval(compiler *);
 
 #define HANDLE(op) \
 HANDLE_##op: \

@@ -1,16 +1,18 @@
-#include "eval.h"
-#include "object.h"
-#include "map_object.h"
+#include <eval.h>
+#include <vm.h>
+#include <object.h>
+#include <map_object.h>
 #include <stdio.h>
 #include <stdlib.h>
-void eval(code_block *b) {
+void eval(compiler *c) {
+    code_block * b = c->lb->head_block;
     ray_object **stack = (ray_object**)malloc(sizeof(ray_object*) * STACK_SIZE);
     int stack_pos = 0;
     int i = 0;
     int len = b->code_len;
     ray_object* arg = NULL;
     op_t opcode;
-    while(i < len) {
+    while(b != NULL && i < len) {
         instr *instruction = &b->code[i];
         opcode = instruction->opcode;
         if(HAS_OPARG(opcode)) {
@@ -21,7 +23,7 @@ void eval(code_block *b) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
                 if(STRING_EXACT(op1)) {
-                    map_put((ray_object*)b->locals, op1, op2);
+                    map_put((ray_object*)c->lb->locals, op1, op2);
                     STACK_PUSH(op2);
                 } else {
                     printf("Invalid name!\n");
@@ -31,7 +33,7 @@ void eval(code_block *b) {
             }
             break;
             HANDLE(LOAD_NAME) {
-                ray_object *val = map_get((ray_object *)b->locals, arg);
+                ray_object *val = map_get((ray_object *)c->lb->locals, arg);
                 if(val == NULL) {
                     printf("Undefined variable %s", STRING_OBJ_AS_STRING(arg));
                     exit(-1);
@@ -99,6 +101,34 @@ void eval(code_block *b) {
                 ++i;
             }
             break;
+            HANDLE(JUMP) {
+                b = b->code[i].jmp_block;
+                i = 0;
+                len = b->code_len;
+            }
+            break;
+            HANDLE(JUMP_FALSE) {
+                ray_object *op = STACK_POP();
+                if(NUMBER_EXACT(op)) {
+                    if(NUMBER_OBJ_AS_NUMBER(op) > 0.00001
+                            || NUMBER_OBJ_AS_NUMBER(op) < -0.0001) {
+                        ++i;
+                    }
+                    else {
+                        b = b->code[i].jmp_block;
+                        i = 0;
+                        len = b->code_len;
+                    }
+                }
+            }
+            break;
+        }
+        if(i == len) {
+            b = b->next;
+            i = 0;
+            if(b != NULL) {
+                len = b->code_len;
+            }
         }
     }
 }
