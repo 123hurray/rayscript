@@ -10,16 +10,24 @@ typedef struct {
     OBJ_HEADER;
 } ray_object;
 
+/** nil **/
+
+typedef struct _nil_object nil_object;
+
+extern nil_object* nil;
+
+
 typedef struct _bool_object bool_object;
 extern bool_object bool_true, bool_false;
+
 
 
 typedef long (* hash_func)(ray_object *);
 typedef bool_object* (*equals_func)(ray_object *, ray_object *);
 
-long type_object_hash(ray_object *);
+long default_hash(ray_object *);
 
-bool_object* base_equals(ray_object *, ray_object *);
+bool_object* default_equals(ray_object *, ray_object *);
 
 struct _type_object{
     OBJ_HEADER;

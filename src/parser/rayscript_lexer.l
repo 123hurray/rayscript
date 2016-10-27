@@ -1,8 +1,12 @@
+%option noyywrap
+%option yylineno
 %{
+#include <config.h>
 #include <string.h>
 #include <statement.h>
 #include <rayscript.tab.h>
 #include <object.h>
+extern int fileno(FILE*);
 %}
 
 %%
@@ -22,7 +26,11 @@
 "/"                                  { yylval.op = OP_DIV;return OPERATOR_2;    } 
 "("                                  { return OP;     }
 ")"                                  { return CP;     }
-\n                                   { /* ignore */    } 
+\n                                   {
+    if(is_interactive) {
+        return EOL;
+    }
+}
 "="                                  { return ASSIGN; }
 [ t]                                 { /* ignore */   } 
 

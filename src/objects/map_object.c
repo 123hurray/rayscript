@@ -4,14 +4,14 @@ type_object entry_object_type = {
     &base_type_object,
     1,
     "entry",
-    type_object_hash
+    default_hash
 };
 
 type_object map_object_type = {
     &base_type_object,
     1,
     "map",
-    type_object_hash
+    default_hash
 };
 
 #define MAP_DEFAULT_SIZE 16

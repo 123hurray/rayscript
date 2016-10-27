@@ -1,12 +1,15 @@
+#include <config.h>
 #include <assert.h>
-#include <eval.h>
 #include <vm.h>
 #include <object.h>
 #include <map_object.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+
+
 void eval(compiler *c) {
-    code_block * b = c->lb->head_block;
+    code_block * b = c->lb->eval_block;
     ray_object **stack = (ray_object**)malloc(sizeof(ray_object*) * STACK_SIZE);
     int stack_pos = 0;
     int i = 0;
@@ -36,7 +39,7 @@ void eval(compiler *c) {
             HANDLE(LOAD_NAME) {
                 ray_object *val = map_get((ray_object *)c->lb->locals, arg);
                 if(val == NULL) {
-                    printf("Undefined variable %s", STRING_OBJ_AS_STRING(arg));
+                    printf("Undefined variable %s\n", STRING_OBJ_AS_STRING(arg));
                     exit(-1);
                 }
                 STACK_PUSH(val);
@@ -120,7 +123,7 @@ void eval(compiler *c) {
             }
             break;
             HANDLE(JUMP_FALSE) {
-                ray_object *op = STACK_GET();
+                ray_object *op = STACK_POP();
                 if(NUMBER_EXACT(op)) {
                     if(NUMBER_OBJ_AS_NUMBER(op) > 0.00001
                             || NUMBER_OBJ_AS_NUMBER(op) < -0.0001) {
@@ -135,7 +138,9 @@ void eval(compiler *c) {
             }
             break;
         }
-        printf("STACK SIZE:%d\n", stack_pos);
+#ifdef VM_DEBUG
+        R_DEBUG("STACK SIZE:%d\n", stack_pos);
+#endif
         if(i == len) {
             b = b->next;
             i = 0;

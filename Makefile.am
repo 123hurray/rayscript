@@ -8,7 +8,7 @@ rayscript_SOURCES= \
 					$(top_srcdir)/src/vm/vm.c \
 					$(top_srcdir)/src/vm/opcode.c \
 					$(top_srcdir)/src/parser/visitor.c
-rayscript_LDADD=-lfl
+rayscript_LDADD=
 
 $(top_srcdir)/src/parser/rayscript_lexer.c: $(top_srcdir)/src/parser/rayscript_lexer.l $(top_srcdir)/src/parser/rayscript_parser.c
 	flex -o $(top_srcdir)/src/parser/rayscript_lexer.c $(top_srcdir)/src/parser/rayscript_lexer.l  

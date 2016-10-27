@@ -1,4 +1,4 @@
-/* src/include.in.  Generated from configure.ac by autoheader.  */
+/* src/include/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -52,11 +52,23 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Define to 1 if you want to debug code generation process */
+#undef PARSE_DEBUG
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
 /* Version number of package */
 #undef VERSION
 
+/* Define to 1 if you want to debug VM execution */
+#undef VM_DEBUG
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
 /* Define to rpl_malloc if the replacement function should be used. */
 #undef malloc
+
+#include <globals.h>

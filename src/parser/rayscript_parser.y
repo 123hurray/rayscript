@@ -9,12 +9,15 @@ int yydebug = 1;
 #include <visitor.h>
 #include <opcode.h>
 #include <vm.h>
-#include <eval.h>
+int is_interactive = 0;
 static statement_list_node* root;
+static statement_list_node* interactive_root;
 int yylex();
 int yyerror();
 %}
+%define api.push-pull both
  /* declare tokens */
+%token INTERP_START
 %token INT_TOKEN FLOAT_TOKEN 
 %token OPERATOR OP CP ASSIGN IDENTIFIER 
 %token EOL 
@@ -56,7 +59,13 @@ int yyerror();
 %%
 program: statement_list {
     root = $1;
-};
+} 
+| INTERP_START statement EOL{
+    statement_list_node* e = MAKE_AST_NODE(statement_list_node);
+    e->next = $2;
+    root = e;
+}
+ |error { yyerrok; yyclearin;printf("set error abourt!");}
 statement_list: statement { 
     statement_list_node* e = MAKE_AST_NODE(statement_list_node);
     e->next = e->tail = $1;
@@ -116,6 +125,10 @@ statement:
     e->psn = $1;
     $$ = e; 
 }
+| error EOL {
+    yyclearin;
+    yyerrok;
+}
 ;
 print_statement: PRINT_TOKEN exp {
     print_statement_node *e = MAKE_AST_NODE(print_statement_node);
@@ -144,7 +157,7 @@ exp: factor {
     e->type = EXP_TYPE_FACTOR;
     e->op1 = NULL;
     e->op2 = NULL; 
-    e->op3 = NULL; 
+    e->op3 = 0; 
     e->op4= $1;
     $$ = e;
 } 
@@ -198,16 +211,76 @@ assign: IDENTIFIER ASSIGN exp {
 }
 ;
 %%
-int main(int argc, char **argv)
-{
+extern int yychar;
+extern FILE* yyin;
+void interactive_mode() {
+    compiler *c = new_compiler();
+    char is_last_eol = 0;
+    while(1) {
+        printf(">>>");
+        int status;
+        yypstate *ps = yypstate_new ();
+        yychar = INTERP_START;
+        status = yypush_parse(ps);
+        do {
+            yychar = yylex ();
+            if(yychar == EOL) {
+                if(is_last_eol == 1) {
+                    is_last_eol = 2;
+                } else {
+                    is_last_eol = 1;
+                    if(ps->yynew == 1) {
+                        printf(">>>");
+                        continue;
+                    } else if (interactive_root == NULL) {
+                        printf("...");
+                        continue;
+                    }
+                }
+            } else {
+                is_last_eol = 0;
+            }
+            status = yypush_parse (ps);
+            if(is_last_eol == 2) {
+                is_last_eol = 0;
+                break;
+            }
+        } while (status == YYPUSH_MORE && root == NULL);
+        yypstate_delete (ps);
+        if(interactive_root && interactive_root->next) {
+            code_gen(c, interactive_root);
+            printf("******op code generated!******\n");
+            eval(c);
+        }
+        status = 0;
+        root = NULL;
+    }
+}
+void normal_mode() {
     yyparse();
     compiler *c = new_compiler();
+    continue_compiler(c);
     visit_statement_list(c, root);
+#ifdef PARSE_DEBUG
     printf("******op code generated!******\n");
+#endif
     eval(c);
+}
+int main(int argc, char **argv) {
+    if(argc == 2) {
+        yyin = fopen(argv[1], "r");
+    } else {
+        is_interactive = 1;
+    }
+    if(is_interactive) {
+        interactive_mode();
+    } else {
+        normal_mode();
+    }
     return 0;
 }
 int yyerror(char *s)
 {
+    yyclearin;
     return fprintf(stderr, "error: %s\n", s);
 }

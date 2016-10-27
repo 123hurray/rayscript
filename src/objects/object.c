@@ -3,11 +3,11 @@
 #include <string.h>
 #include "map_object.h"
 
-long type_object_hash(ray_object *self) {
+long default_hash(ray_object *self) {
     return (long)((void *)self);
 }
 
-bool_object* base_equals(ray_object *self, ray_object* other) {
+bool_object* default_equals(ray_object *self, ray_object* other) {
     return (self == other)?&bool_true:&bool_false;
 }
 
@@ -15,9 +15,28 @@ type_object base_type_object = {
     &base_type_object,
     5,
     "type",
-    type_object_hash  
+    default_hash  
 };
 
+/** nil **/
+
+type_object nil_type_object = {
+    &base_type_object,
+    0,
+    "nil",
+    default_hash
+};
+
+typedef struct _nil_object {
+    OBJ_HEADER;
+} nil_object;
+
+nil_object _nil = {
+    &nil_type_object,
+    1
+};
+
+nil_object * nil = &_nil;
 
 
 
@@ -28,8 +47,8 @@ type_object bool_type_object = {
     &base_type_object,
     0,
     "bool",
-    type_object_hash,
-    base_equals
+    default_hash,
+    default_equals
 };
 
 struct _bool_object {

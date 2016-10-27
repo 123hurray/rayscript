@@ -8,18 +8,26 @@ static double scale_factor = 1.5;
 
 logic_block *new_logic_block() {
     logic_block * lb = R_MALLOC(logic_block);
-    lb->cb = lb->head_block = new_code_block();
+    lb->head_block = new_code_block();
+    lb->eval_block = lb->cb = NULL;
     lb->globals = new_map_object(1);
     lb->locals = new_map_object(1);
     return lb;
-    
+}
+
+void continue_compiler(compiler* c) {
+    if(c->lb->cb) {
+        c->lb->eval_block = c->lb->cb = new_code_block();
+    } else {
+        c->lb->eval_block = c->lb->cb = c->lb->head_block;
+    }
+
 }
 
 compiler* new_compiler() {
     compiler * c = R_MALLOC(compiler);
     c->lb = new_logic_block();
     return c;
-
 }
 
 code_block *new_code_block() {
