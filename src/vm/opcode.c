@@ -36,6 +36,7 @@ code_block *new_code_block() {
     c->code = R_MALLOC_N(instr, DEFAULT_CODE_SIZE);
     memset(c->code, 0, DEFAULT_CODE_SIZE);
     c->code_len = 0;
+    c->next = NULL;
     return c;
 }
 

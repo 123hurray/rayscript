@@ -63,7 +63,7 @@
 #define VERSION "0.1"
 
 /* Define to 1 if you want to debug VM execution */
-/* #undef VM_DEBUG */
+#define VM_DEBUG 1
 
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */

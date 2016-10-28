@@ -74,7 +74,6 @@ void visit_lname(compiler *c, char* node) {
 void visit_assign(compiler *c, assign_node * node) {
     visit_exp(c, node->rval);
     visit_lname(c, node->lval);
-    ADD_OP(c, DUP);
     ADD_OP(c, STORE_NAME);
 }
 void visit_if(compiler *c, if_statement_node *node) {
@@ -139,9 +138,11 @@ void code_gen(compiler *c, statement_list_node *node) {
 void visit_statement_list(compiler *c, statement_list_node * node) {
     statement_node * n = node->next;
     while(n) {
-        visit_statement(c, n);
-        if(n->next) {
-            ADD_OP(c, POP);
+        if(n->type != STATEMENT_TYPE_EMPTY) {
+            visit_statement(c, n);
+            if(n->next) {
+                ADD_OP(c, POP);
+            }
         }
         n = n->next;
     }

@@ -12,7 +12,8 @@ typedef enum {
     STATEMENT_TYPE_EXP,
     STATEMENT_TYPE_ASSIGN,
     STATEMENT_TYPE_IF,
-    STATEMENT_TYPE_PRINT
+    STATEMENT_TYPE_PRINT,
+    STATEMENT_TYPE_EMPTY
 } statement_type;
 typedef enum {
     FACTOR_TYPE_INT,

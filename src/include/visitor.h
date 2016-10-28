@@ -1,5 +1,6 @@
 #ifndef VISITOR_H
 #define VISITOR_H
+#include <globals.h>
 #include <config.h>
 #include <opcode.h>
 #include <vm.h>
@@ -8,7 +9,6 @@
 // Defines
 
 #ifdef PARSE_DEBUG
-
 #define ADD_OP(c, o) do{R_DEBUG(#o"\n");add_op(c, o);}while(0)
 #define ADD_OP_ARG(c, o, a) do{R_DEBUG(#o"\n");add_op_arg(c, o, a);}while(0)
 #define ADD_OP_JMP(c, o, t) do{R_DEBUG(#o"\n");add_op_jmp(c, o, t);}while(0)

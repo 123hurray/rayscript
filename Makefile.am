@@ -4,6 +4,9 @@ rayscript_SOURCES= \
 					$(top_srcdir)/src/parser/rayscript_lexer.c \
 					$(top_srcdir)/src/parser/rayscript_parser.c \
 				  	$(top_srcdir)/src/objects/map_object.c \
+				  	$(top_srcdir)/src/objects/nil_object.c \
+				  	$(top_srcdir)/src/objects/type_object.c \
+				  	$(top_srcdir)/src/objects/string_object.c \
 					$(top_srcdir)/src/objects/object.c \
 					$(top_srcdir)/src/vm/vm.c \
 					$(top_srcdir)/src/vm/opcode.c \
@@ -15,10 +18,10 @@ $(top_srcdir)/src/parser/rayscript_lexer.c: $(top_srcdir)/src/parser/rayscript_l
 
 
 $(top_srcdir)/src/parser/rayscript_parser.c: $(top_srcdir)/src/parser/rayscript_parser.y
-	bison --defines=$(top_srcdir)/src/include/rayscript.tab.h -o $(top_srcdir)/src/parser/rayscript_parser.c $(top_srcdir)/src/parser/rayscript_parser.y
+	bison -Werror --verbose -t --defines=$(top_srcdir)/src/include/rayscript.tab.h -o $(top_srcdir)/src/parser/rayscript_parser.c $(top_srcdir)/src/parser/rayscript_parser.y
 
 
-AM_CFLAGS=-I$(top_srcdir)/src/include  -std=c99
+AM_CFLAGS=-I$(top_srcdir)/src/include  -std=c99 -Werror
 export AM_CFLAGS
 clean-local: 
 	--rm -rf $(top_srcdir)/src/parser/rayscript_lexer.c $(top_srcdir)/src/parser/rayscript_parser.c $(top_srcdir)/src/include/rayscript.tab.h

@@ -1,57 +1,40 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 #include <stdlib.h>
-typedef unsigned char uchar;
-typedef struct _type_object type_object;
+#include <all_objects.h>
+#include <globals.h>
+
 #define OBJ_HEADER \
     type_object* type;\
     int size;
-typedef struct {
+
+#include <type_object.h>
+
+struct _ray_object {
     OBJ_HEADER;
-} ray_object;
-
-/** nil **/
-
-typedef struct _nil_object nil_object;
-
-extern nil_object* nil;
+};
 
 
-typedef struct _bool_object bool_object;
-extern bool_object bool_true, bool_false;
+#include <nil_object.h>
+#include <bool_object.h>
+#include <string_object.h>
 
 
 
-typedef long (* hash_func)(ray_object *);
-typedef bool_object* (*equals_func)(ray_object *, ray_object *);
 
 long default_hash(ray_object *);
 
 bool_object* default_equals(ray_object *, ray_object *);
 
-struct _type_object{
+
+
+struct _number_object {
     OBJ_HEADER;
-    char* name;
-    hash_func __hash;
-    equals_func __equals;
+    double val;
 };
 
 
-typedef struct {
-    OBJ_HEADER;
-    double val;
-} number_object;
-
-typedef struct {
-    OBJ_HEADER;
-    char* val;
-    uchar is_hash_cached;
-    long hash_cache;
-} string_object;
-
-extern type_object base_type_object;
 extern type_object number_type_object;
-extern type_object string_type_object;
 
 
 
@@ -68,14 +51,6 @@ extern type_object string_type_object;
 
 
 
-
-
-/** string **/
-
-string_object *new_string_object(char* val);
-#define STRING_EXACT(o) ((((ray_object *)o)->type == &string_type_object)?1:0)
-
-#define STRING_OBJ_AS_STRING(o) (((string_object *)o)->val)
 
 
 

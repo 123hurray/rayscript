@@ -55,6 +55,7 @@ int yyerror();
 %type <str> IDENTIFIER;
 %type <op> OPERATOR_1;
 %type <op> OPERATOR_2;
+%nonassoc EOL
 %start program
 %%
 program: statement_list {
@@ -63,15 +64,14 @@ program: statement_list {
 | INTERP_START statement EOL{
     statement_list_node* e = MAKE_AST_NODE(statement_list_node);
     e->next = $2;
-    root = e;
+    interactive_root = e;
 }
- |error { yyerrok; yyclearin;printf("set error abourt!");}
-statement_list: statement { 
+statement_list: statement EOL { 
     statement_list_node* e = MAKE_AST_NODE(statement_list_node);
     e->next = e->tail = $1;
     $$ = e;
 }
-| statement_list statement {
+| statement_list statement EOL {
     statement_list_node* s = $1;
     s->tail->next = $2;
     s->tail = $2;
@@ -83,14 +83,13 @@ compound_statement: LB RB  {
     e->list = NULL;
     $$ = e;
 }
-| LB statement_list RB {
+| LB EOL statement_list RB {
     compound_statement_node* e = MAKE_AST_NODE(compound_statement_node);
-    e->list = $2;
+    e->list = $3;
     $$ = e;
 }
 ;
-statement: 
-| compound_statement {
+statement: compound_statement {
     statement_node* e = MAKE_AST_NODE(statement_node);
     e->type = STATEMENT_TYPE_COMPOUND;
     e->next = NULL;
@@ -125,17 +124,18 @@ statement:
     e->psn = $1;
     $$ = e; 
 }
-| error EOL {
-    yyclearin;
-    yyerrok;
-}
-;
+|{
+    statement_node* e = MAKE_AST_NODE(statement_node);
+    e->type = STATEMENT_TYPE_EMPTY;
+    e->next = NULL;
+    $$ = e; 
+};
 print_statement: PRINT_TOKEN exp {
     print_statement_node *e = MAKE_AST_NODE(print_statement_node);
     e->exp = $2;
     $$ = e;
-}
-if_statement: IF_TOKEN exp compound_statement{
+};
+if_statement: IF_TOKEN exp compound_statement {
     if_statement_node *e = MAKE_AST_NODE(if_statement_node);
     e->test_exp = $2;
     e->then = $3;
@@ -148,8 +148,7 @@ if_statement: IF_TOKEN exp compound_statement{
     e->then = $3;
     e->els = $5;
     $$ = e;
-}
-; 
+}; 
 
 
 exp: factor { 
@@ -201,6 +200,7 @@ factor : INT_TOKEN {
     e->exp = $2;
     $$ = e;
 }
+
 ;
 
 assign: IDENTIFIER ASSIGN exp {
@@ -215,7 +215,7 @@ extern int yychar;
 extern FILE* yyin;
 void interactive_mode() {
     compiler *c = new_compiler();
-    char is_last_eol = 0;
+    int is_last_eol = 1;
     while(1) {
         printf(">>>");
         int status;
@@ -224,28 +224,22 @@ void interactive_mode() {
         status = yypush_parse(ps);
         do {
             yychar = yylex ();
+            if(yychar == 0) {
+                exit(0);
+            }
             if(yychar == EOL) {
                 if(is_last_eol == 1) {
-                    is_last_eol = 2;
+                    printf(">>>");
+                    continue;
                 } else {
+                    printf("...");
                     is_last_eol = 1;
-                    if(ps->yynew == 1) {
-                        printf(">>>");
-                        continue;
-                    } else if (interactive_root == NULL) {
-                        printf("...");
-                        continue;
-                    }
                 }
             } else {
                 is_last_eol = 0;
             }
             status = yypush_parse (ps);
-            if(is_last_eol == 2) {
-                is_last_eol = 0;
-                break;
-            }
-        } while (status == YYPUSH_MORE && root == NULL);
+        } while (status == YYPUSH_MORE && interactive_root == NULL);
         yypstate_delete (ps);
         if(interactive_root && interactive_root->next) {
             code_gen(c, interactive_root);
@@ -253,7 +247,7 @@ void interactive_mode() {
             eval(c);
         }
         status = 0;
-        root = NULL;
+        interactive_root = NULL;
     }
 }
 void normal_mode() {
@@ -262,7 +256,7 @@ void normal_mode() {
     continue_compiler(c);
     visit_statement_list(c, root);
 #ifdef PARSE_DEBUG
-    printf("******op code generated!******\n");
+    R_DEBUG("******op code generated!******\n");
 #endif
     eval(c);
 }
@@ -281,6 +275,7 @@ int main(int argc, char **argv) {
 }
 int yyerror(char *s)
 {
-    yyclearin;
+    static int i;
+    if(++i==3) exit(-1);
     return fprintf(stderr, "error: %s\n", s);
 }

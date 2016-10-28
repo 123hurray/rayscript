@@ -27,9 +27,7 @@ extern int fileno(FILE*);
 "("                                  { return OP;     }
 ")"                                  { return CP;     }
 \n                                   {
-    if(is_interactive) {
         return EOL;
-    }
 }
 "="                                  { return ASSIGN; }
 [ t]                                 { /* ignore */   } 

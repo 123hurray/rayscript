@@ -25,10 +25,9 @@ void eval(compiler *c) {
         switch(opcode) {
             HANDLE(STORE_NAME) {
                 ray_object *op1 = STACK_POP();
-                ray_object *op2 = STACK_POP();
+                ray_object *op2 = STACK_GET();
                 if(STRING_EXACT(op1)) {
                     map_put((ray_object*)c->lb->locals, op1, op2);
-                    STACK_PUSH(op2);
                 } else {
                     printf("Invalid name!\n");
                     exit(-1);
@@ -134,6 +133,8 @@ void eval(compiler *c) {
                         i = 0;
                         len = b->code_len;
                     }
+                } else {
+                    R_FATAL("type error!\n");
                 }
             }
             break;

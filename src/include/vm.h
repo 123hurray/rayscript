@@ -39,9 +39,9 @@ DEBUG_OP(#op);
 
 #define STACK_POP() ( \
     --stack_pos,\
-    (stack_pos < 0)? ( \
-        R_FATAL("Stack empty!") \
-        ):0, stack[stack_pos])
+    (stack_pos < 0)?  \
+       (ray_object*)R_FATAL("Stack empty!") \
+        :stack[stack_pos])
 
 #define STACK_PUSH(v) do { \
     if(stack_pos >= STACK_SIZE) { \
@@ -53,9 +53,9 @@ DEBUG_OP(#op);
 } while(0);
     
 #define STACK_GET(v) (\
-    (stack_pos < 1)? (\
-        R_FATAL("Stack empty") \
-        ):0, stack[stack_pos-1])
+    (stack_pos < 1)? \
+        (ray_object*)R_FATAL("Stack empty") \
+        :stack[stack_pos-1])
 
 
 // Structs

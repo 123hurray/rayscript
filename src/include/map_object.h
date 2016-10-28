@@ -11,11 +11,11 @@ typedef struct _entry_object {
 } entry_object;
 
 
-typedef struct {
+struct _map_object {
     OBJ_HEADER;
     entry_object ** table;
     int allocated;
-} map_object;
+};
 
 #define OBJ_AS_MAP_OBJ(obj) ((map_object*)(obj))
 
