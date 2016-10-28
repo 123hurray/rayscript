@@ -25,6 +25,7 @@ src/include/stamp-h?
 src/parser/rayscript_lexer.c
 src/parser/rayscript_parser.c
 src/include/rayscript.tab.h
+src/include/config.h
 *.in
 *.output
 rayscript

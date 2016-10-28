@@ -2,7 +2,6 @@
 
 type_object bool_type_object = {
     &base_type_object,
-    0,
     "bool",
     default_hash,
     default_equals
@@ -10,12 +9,10 @@ type_object bool_type_object = {
 
 bool_object bool_true = {
     &bool_type_object,
-    0
 };
 
 bool_object bool_false = {
     &bool_type_object,
-    0
 };
 
 bool_object *p_bool_true = &bool_true;

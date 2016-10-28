@@ -13,6 +13,7 @@ typedef struct _entry_object {
 
 struct _map_object {
     OBJ_HEADER;
+    int size;
     entry_object ** table;
     int allocated;
 };

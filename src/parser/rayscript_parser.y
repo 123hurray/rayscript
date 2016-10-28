@@ -61,21 +61,25 @@ int yyerror();
 %%
 program: statement_list {
     root = $1;
-} 
+}
+| statement_list eols{
+    root = $1;
+}
+
 | INTERP_START statement EOL{
     statement_list_node* e = MAKE_AST_NODE(statement_list_node);
     e->next = $2;
     interactive_root = e;
 }
-statement_list: statement EOL { 
+statement_list: statement { 
     statement_list_node* e = MAKE_AST_NODE(statement_list_node);
     e->next = e->tail = $1;
     $$ = e;
 }
-| statement_list statement EOL {
+| statement_list eols statement {
     statement_list_node* s = $1;
-    s->tail->next = $2;
-    s->tail = $2;
+    s->tail->next = $3;
+    s->tail = $3;
     $$ = $1;
 }
 ;
@@ -87,7 +91,7 @@ compound_statement: LB eols RB  {
     e->list = NULL;
     $$ = e;
 }
-| LB EOL statement_list RB {
+| LB eols statement_list eols RB {
     compound_statement_node* e = MAKE_AST_NODE(compound_statement_node);
     e->list = $3;
     $$ = e;
@@ -177,13 +181,13 @@ exp: factor {
 factor : INT_TOKEN {
     factor_node *f = MAKE_AST_NODE(factor_node);
     f->type = FACTOR_TYPE_INT;
-    f->val = (ray_object*)new_number_object($1);
+    f->val = (ray_object*)new_number_object_from_long($1);
     $$ = f;
 }
 | FLOAT_TOKEN {
     factor_node *f = MAKE_AST_NODE(factor_node);
     f->type = FACTOR_TYPE_FLOAT;
-    f->val = (ray_object*)new_number_object($1);
+    f->val = (ray_object*)new_number_object_from_double($1);
     $$ = f;
 }
 | IDENTIFIER {

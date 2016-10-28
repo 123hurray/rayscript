@@ -4,8 +4,10 @@ rayscript_SOURCES= \
 					$(top_srcdir)/src/parser/rayscript_lexer.c \
 					$(top_srcdir)/src/parser/rayscript_parser.c \
 				  	$(top_srcdir)/src/objects/map_object.c \
+				  	$(top_srcdir)/src/objects/bool_object.c \
 				  	$(top_srcdir)/src/objects/nil_object.c \
 				  	$(top_srcdir)/src/objects/type_object.c \
+				  	$(top_srcdir)/src/objects/number_object.c \
 				  	$(top_srcdir)/src/objects/string_object.c \
 					$(top_srcdir)/src/objects/object.c \
 					$(top_srcdir)/src/vm/vm.c \

@@ -30,11 +30,10 @@ void eval(compiler *c) {
             HANDLE(STORE_NAME) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_GET();
-                if(STRING_EXACT(op1)) {
+                if(OBJ_IS_TRUE(STRING_EXACT(op1))) {
                     map_put((ray_object*)c->lb->locals, op1, op2);
                 } else {
-                    printf("Invalid name!\n");
-                    exit(-1);
+                    QUIT_VM("Invalid name!\n");
                 }
                 ++i;
             }
@@ -56,47 +55,49 @@ void eval(compiler *c) {
             HANDLE(D_ADD) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
-                number_object *v;
-                if(NUMBER_EXACT(op1) && NUMBER_EXACT(op2)) {
-                    v = new_number_object(NUMBER_OBJ_AS_NUMBER(op1) + NUMBER_OBJ_AS_NUMBER(op2));
+                ray_object *v = OBJ_ADD(op1, op2);
+                if(!OBJ_IS_NIL(v)) {
+                    STACK_PUSH((ray_object *)v);
+                    ++i;
                 } else {
-                    printf("Unsupport type %s", op2->type->name);
+                    QUIT_VM("Unsupport %s add %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
-                STACK_PUSH((ray_object *)v);
-                ++i;
             }
             break;
             HANDLE(D_SUB) {
-                ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
-                number_object *v;
-                if(NUMBER_EXACT(op1) && NUMBER_EXACT(op2)) {
-                    v = new_number_object(NUMBER_OBJ_AS_NUMBER(op2) - NUMBER_OBJ_AS_NUMBER(op1));
+                ray_object *op1 = STACK_POP();
+                ray_object *v = OBJ_SUB(op1, op2);
+                if(!OBJ_IS_NIL(v)) {
+                    STACK_PUSH((ray_object *)v);
+                    ++i;
+                } else {
+                    QUIT_VM("Unsupport type %s sub type %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
-                STACK_PUSH((ray_object *)v);
-                ++i;
             }
             break;
             HANDLE(D_MUL) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
-                number_object *v;
-                if(NUMBER_EXACT(op1) && NUMBER_EXACT(op2)) {
-                   v = new_number_object(NUMBER_OBJ_AS_NUMBER(op1) * NUMBER_OBJ_AS_NUMBER(op2));
+                ray_object *v = OBJ_MUL(op1, op2);
+                if(!OBJ_IS_NIL(v)) {
+                    STACK_PUSH((ray_object *)v);
+                    ++i;
+                } else {
+                    QUIT_VM("Unsupport type %s mul type %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
-                STACK_PUSH((ray_object *)v);
-                ++i;
             }
             break;
             HANDLE(D_DIV) {
-                ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
-                number_object *v;
-                if(NUMBER_EXACT(op1) && NUMBER_EXACT(op2)) {
-                    v = new_number_object(NUMBER_OBJ_AS_NUMBER(op2) / NUMBER_OBJ_AS_NUMBER(op1));
+                ray_object *op1 = STACK_POP();
+                ray_object *v = OBJ_DIV(op1, op2);
+                if(!OBJ_IS_NIL(v)) {
+                    STACK_PUSH((ray_object *)v);
+                    ++i;
+                } else {
+                    QUIT_VM("Unsupport type %s div type %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
-                STACK_PUSH((ray_object *)v);
-                ++i;
             }
             break;
             HANDLE(PRINT) {
@@ -127,8 +128,7 @@ void eval(compiler *c) {
             HANDLE(JUMP_FALSE) {
                 ray_object *op = STACK_POP();
                 if(NUMBER_EXACT(op)) {
-                    if(NUMBER_OBJ_AS_NUMBER(op) > 0.00001
-                            || NUMBER_OBJ_AS_NUMBER(op) < -0.0001) {
+                    if(OBJ_IS_FALSE(OBJ_EQUALS(op, new_number_object_from_long(0L)))) {
                         ++i;
                     }
                     else {
@@ -155,8 +155,8 @@ void eval(compiler *c) {
     }
 
     assert(stack_pos == 1);
-
-    printf("Execute result:%lf\n", NUMBER_OBJ_AS_NUMBER(STACK_POP()));
+    ray_object *ret = STACK_POP();
+    printf("Execute result:%lf\n", NUMBER_OBJ_AS_NUMBER(ret));
 
 clear:
     ;

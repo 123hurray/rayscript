@@ -6,6 +6,7 @@
 #include <statement.h>
 #include <rayscript.tab.h>
 #include <object.h>
+#include <allocator.h>
 extern int fileno(FILE*);
 %}
 
@@ -33,18 +34,18 @@ extern int fileno(FILE*);
 [ t]                                 { /* ignore */   } 
 
 ([a-zA-Z_][a-zA-Z0-9]*)                      {
-    char *str = (char *)malloc(strlen(yytext));
+    char *str = R_MALLOC_N(char, strlen(yytext));
     strcpy(str, yytext);
     yylval.str = str; 
     return IDENTIFIER;
 }
-([0-9]*\.?[0-9]+|[0-9]+\.[0-9]*)     { 
+([0-9]*\.[0-9]+|[0-9]+\.[0-9]*)     { 
     yylval.fnum = atof(yytext);
     return FLOAT_TOKEN;
 } 
 ([0-9]?) {
     yylval.inum = atoi(yytext);
-    return FLOAT_TOKEN;
+    return INT_TOKEN;
 }
 %%
 

@@ -4,6 +4,10 @@
 
 typedef long (* hash_func)(ray_object *);
 typedef bool_object* (*equals_func)(ray_object *, ray_object *);
+typedef ray_object* (*add_func)(ray_object *, ray_object *);
+typedef ray_object* (*sub_func)(ray_object *, ray_object *);
+typedef ray_object* (*mul_func)(ray_object *, ray_object *);
+typedef ray_object* (*div_func)(ray_object *, ray_object *);
 
 
 
@@ -12,6 +16,11 @@ struct _type_object {
     char* name;
     hash_func __hash;
     equals_func __equals;
+    add_func __add;
+    sub_func __sub;
+    mul_func __mul;
+    div_func __div;
+
 };
 
 

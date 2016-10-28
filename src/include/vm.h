@@ -40,8 +40,8 @@ DEBUG_OP(#op);
 #define STACK_POP() ( \
     --stack_pos,\
     (stack_pos < 0)?  \
-       (ray_object*)R_FATAL("Stack empty!") \
-        :stack[stack_pos])
+       (NULL) \
+        :stack[stack_pos]);{if(stack_pos<0) QUIT_VM("Stack empty");}
 
 #define STACK_PUSH(v) do { \
     if(stack_pos >= STACK_SIZE) { \

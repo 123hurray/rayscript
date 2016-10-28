@@ -19,17 +19,16 @@ long string_object_hash(ray_object *self) {
 
 bool_object *string_object_equals(ray_object * self, ray_object * other) {
     if(self == NULL) {
-        return (other == NULL)?&bool_true:&bool_false;
+        return (other == NULL)?p_bool_true:p_bool_false;
     }
     if(other == NULL) {
-        return &bool_false;
+        return p_bool_false;
     }
-    return (strcmp(STRING_OBJ_AS_STRING(self), STRING_OBJ_AS_STRING(other)) == 0)?&bool_true:&bool_false;
+    return (strcmp(STRING_OBJ_AS_STRING(self), STRING_OBJ_AS_STRING(other)) == 0)?p_bool_true:p_bool_false;
 }
 
 type_object string_type_object = {
     &base_type_object,
-    7,
     "string",
     string_object_hash,
     string_object_equals

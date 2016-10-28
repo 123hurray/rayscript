@@ -1,15 +1,14 @@
-#include "map_object.h"
+#include <map_object.h>
+#include <allocator.h>
 
 type_object entry_object_type = {
     &base_type_object,
-    1,
     "entry",
     default_hash
 };
 
 type_object map_object_type = {
     &base_type_object,
-    1,
     "map",
     default_hash
 };
@@ -21,11 +20,12 @@ type_object map_object_type = {
 map_object *new_map_object(int size) {
     map_object * map = NEW_OBJ(map_object);
     INIT_OBJ_HEADER(map, map_object_type, 0);
-    if(size < 1) {
-        size = 1;
+    if(size < MAP_DEFAULT_SIZE) {
+        size = MAP_DEFAULT_SIZE;
     }
     map->allocated = size;
-    map->table = (entry_object **)malloc(sizeof(entry_object*)*size);
+    map->table = R_MALLOC_N(entry_object*, size);
+    memset(map->table, 0, size * sizeof(entry_object *));
     return map;
 }
 
@@ -49,13 +49,13 @@ void map_put(ray_object *self, ray_object *key, ray_object *val) {
         int old_size = map->allocated;
         map->allocated *= MAP_SCALE_FACTOR;
         int new_size = map->allocated;
-        entry_object **new_table = (entry_object **)malloc(new_size * sizeof(entry_object *));
-        memset(new_table, 0, new_size);
+        entry_object **new_table = R_MALLOC_N(entry_object *, new_size);
+        memset(new_table, 0, new_size * sizeof(entry_object *));
         for(int i = 0; i < old_size; ++i) {
             entry_object* e = (entry_object *)map->table[i];
             while(e) {
                 int index = e->hash % new_size;
-                entry_object * save = e->next;
+                entry_object * save = e;
                 if(new_table[index] == NULL) {
                     new_table[index] = save;
                     save->next = NULL;
@@ -81,7 +81,7 @@ ray_object * map_get(ray_object* self, ray_object *key) {
     int index = hash % map->allocated;
     entry_object* e = map->table[index];
     while(e) {
-        if(e->hash == hash && e->key->type->__equals(e->key, key)) {
+        if(e->hash == hash && OBJ_IS_TRUE(OBJ_EQUALS(e->key, key))) {
             return e->val;
         }
         e = e->next;
