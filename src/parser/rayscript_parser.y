@@ -1,4 +1,5 @@
 %{
+//#define RDEBUG
 #ifdef RDEBUG
 #define YYDEBUG 1
 int yydebug = 1;
@@ -78,7 +79,10 @@ statement_list: statement EOL {
     $$ = $1;
 }
 ;
-compound_statement: LB RB  {
+eols: EOL
+| eols EOL
+;
+compound_statement: LB eols RB  {
     compound_statement_node* e = MAKE_AST_NODE(compound_statement_node);
     e->list = NULL;
     $$ = e;
@@ -123,12 +127,6 @@ statement: compound_statement {
     e->next = NULL;
     e->psn = $1;
     $$ = e; 
-}
-|{
-    statement_node* e = MAKE_AST_NODE(statement_node);
-    e->type = STATEMENT_TYPE_EMPTY;
-    e->next = NULL;
-    $$ = e; 
 };
 print_statement: PRINT_TOKEN exp {
     print_statement_node *e = MAKE_AST_NODE(print_statement_node);
@@ -167,7 +165,7 @@ exp: factor {
     e->op2 = $3; 
     e->op3 = $2;
     $$ = e; 
-}; 
+} 
  | exp OPERATOR_2 exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
     e->type = EXP_TYPE_OP;
@@ -213,6 +211,7 @@ assign: IDENTIFIER ASSIGN exp {
 %%
 extern int yychar;
 extern FILE* yyin;
+extern void yyrestart(FILE*);
 void interactive_mode() {
     compiler *c = new_compiler();
     int is_last_eol = 1;
@@ -239,11 +238,20 @@ void interactive_mode() {
                 is_last_eol = 0;
             }
             status = yypush_parse (ps);
+            if(status == 1) {
+                // flush input buffer
+                yyrestart(yyin);
+                interactive_root = NULL;
+                break;
+            }
         } while (status == YYPUSH_MORE && interactive_root == NULL);
         yypstate_delete (ps);
-        if(interactive_root && interactive_root->next) {
+        printf("\b\b\b");
+        if(status != 1 && interactive_root && interactive_root->next) {
             code_gen(c, interactive_root);
+#ifdef PARSE_DEBUG
             printf("******op code generated!******\n");
+#endif
             eval(c);
         }
         status = 0;
@@ -275,7 +283,8 @@ int main(int argc, char **argv) {
 }
 int yyerror(char *s)
 {
-    static int i;
-    if(++i==3) exit(-1);
-    return fprintf(stderr, "error: %s\n", s);
+    printf("\b\b\b");
+    R_ERROR("error: %s\n", s);
+    return 0;
+
 }

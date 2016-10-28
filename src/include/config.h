@@ -54,7 +54,7 @@
 #define PACKAGE_VERSION "0.1"
 
 /* Define to 1 if you want to debug code generation process */
-#define PARSE_DEBUG 1
+/* #undef PARSE_DEBUG */
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -63,7 +63,7 @@
 #define VERSION "0.1"
 
 /* Define to 1 if you want to debug VM execution */
-#define VM_DEBUG 1
+/* #undef VM_DEBUG */
 
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */

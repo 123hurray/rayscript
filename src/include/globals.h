@@ -15,15 +15,17 @@ extern int is_interactive;
 #define R_DEBUG(v, ...) 
 #endif // RS_DEBUG
 
-#ifndef R_STD_ERR
-#define R_STD_ERR stderr
-#endif // R_SRD_ERR
+#ifndef R_ERR
+#define R_ERR stderr
+#endif // R_ERR
+
+#define R_ERROR(v, ...) (\
+    fprintf(R_ERR, v, ##__VA_ARGS__),\
+    fflush(R_ERR))
 
 
 #define R_FATAL(v, ...) (\
-    fprintf(R_STD_ERR, v, ##__VA_ARGS__),\
-    fflush(R_STD_ERR),\
-    exit(-1),NULL)
+    R_ERROR(v, ##__VA_ARGS__), exit(-1),NULL)
 
 
 typedef unsigned char uchar;

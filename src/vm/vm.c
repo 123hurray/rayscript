@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define QUIT_VM(v, ...) do{ \
+    R_ERROR(v, ##__VA_ARGS__);\
+    goto clear;\
+}while(0)
 
 
 void eval(compiler *c) {
@@ -38,8 +42,7 @@ void eval(compiler *c) {
             HANDLE(LOAD_NAME) {
                 ray_object *val = map_get((ray_object *)c->lb->locals, arg);
                 if(val == NULL) {
-                    printf("Undefined variable %s\n", STRING_OBJ_AS_STRING(arg));
-                    exit(-1);
+                    QUIT_VM("Undefined variable %s\n", STRING_OBJ_AS_STRING(arg));
                 }
                 STACK_PUSH(val);
                 ++i;
@@ -134,7 +137,7 @@ void eval(compiler *c) {
                         len = b->code_len;
                     }
                 } else {
-                    R_FATAL("type error!\n");
+                    QUIT_VM("type error!\n");
                 }
             }
             break;
@@ -154,6 +157,9 @@ void eval(compiler *c) {
     assert(stack_pos == 1);
 
     printf("Execute result:%lf\n", NUMBER_OBJ_AS_NUMBER(STACK_POP()));
+
+clear:
+    ;
 }
 
 

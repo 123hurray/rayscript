@@ -11,7 +11,7 @@
 /ltmain.sh
 /m4/
 /missing
-/stamp-h?
+src/include/stamp-h?
 .deps/
 .dirstamp
 .libs/
@@ -25,5 +25,7 @@
 src/parser/rayscript_lexer.c
 src/parser/rayscript_parser.c
 src/include/rayscript.tab.h
-test.in
+*.in
+*.output
 rayscript
+/.*

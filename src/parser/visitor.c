@@ -136,15 +136,20 @@ void code_gen(compiler *c, statement_list_node *node) {
 
 }
 void visit_statement_list(compiler *c, statement_list_node * node) {
+    int executed = 0;
     statement_node * n = node->next;
     while(n) {
         if(n->type != STATEMENT_TYPE_EMPTY) {
+            executed = 1;
             visit_statement(c, n);
             if(n->next) {
                 ADD_OP(c, POP);
             }
         }
         n = n->next;
+    }
+    if(executed == 0) {
+        ADD_OP_ARG(c, PUSH, (ray_object*)&nil);
     }
 }
 
