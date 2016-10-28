@@ -42,7 +42,7 @@ typedef struct _if_statement_node if_statement_node;
 typedef struct _statement_node statement_node;
 typedef struct _statement_list_node statement_list_node;
 typedef struct _compound_statement_node compound_statement_node;
-typedef struct _asign_node assign_node;
+typedef struct _assign_node assign_node;
 #include "rayscript.tab.h"
 
 struct _compound_statement_node {
@@ -96,10 +96,10 @@ struct _factor_node {
         exp_node* exp;
     };
 };
-struct _asign_node {
+struct _assign_node {
     AST_HEADER;
     char * lval;
-    exp_node * rval;
+    statement_node * rval;
 };
 
 

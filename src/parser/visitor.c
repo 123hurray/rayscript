@@ -72,7 +72,7 @@ void visit_lname(compiler *c, char* node) {
 }
 
 void visit_assign(compiler *c, assign_node * node) {
-    visit_exp(c, node->rval);
+    visit_statement(c, node->rval);
     visit_lname(c, node->lval);
     ADD_OP(c, STORE_NAME);
 }

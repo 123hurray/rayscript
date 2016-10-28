@@ -26,6 +26,7 @@ int yyerror();
 %token PRINT_TOKEN
 %token TYPE_TERM TYPE_FACTOR
 %token AND_TOKEN OR_TOKEN EQUALS_TOKEN
+%right EQUALS_TOKEN
 %left OPERATOR_1
 %left OPERATOR_2
 %union{
@@ -205,7 +206,7 @@ factor : INT_TOKEN {
 
 ;
 
-assign: IDENTIFIER ASSIGN exp {
+assign: IDENTIFIER ASSIGN statement {
     assign_node* e = MAKE_AST_NODE(assign_node);
     e->lval = $1;
     e->rval = $3;
