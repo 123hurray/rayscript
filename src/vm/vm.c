@@ -12,6 +12,18 @@
 }while(0)
 
 
+#define VM_HANDLE_OP_BIN(op) \
+    HANDLE(OP_##op) {\
+                ray_object *op2 = STACK_POP();\
+                ray_object* op1 = STACK_POP();\
+                ray_object* val = (ray_object*)OBJ_BOOL_FROM_INT(OBJ_##op(op1, op2));\
+                STACK_PUSH(val);\
+                ++i;\
+            }\
+            break
+
+
+
 void eval(compiler *c) {
     code_block * b = c->lb->eval_block;
     ray_object **stack = (ray_object**)malloc(sizeof(ray_object*) * STACK_SIZE);
@@ -38,7 +50,7 @@ void eval(compiler *c) {
                 ++i;
             }
             break;
-            HANDLE(LOAD_NAME) {
+            HANDLE_ARG(LOAD_NAME) {
                 ray_object *val = map_get((ray_object *)c->lb->locals, arg);
                 if(val == NULL) {
                     QUIT_VM("Undefined variable %s\n", STRING_OBJ_AS_STRING(arg));
@@ -47,12 +59,12 @@ void eval(compiler *c) {
                 ++i;
             }
             break;
-            HANDLE(PUSH) {
+            HANDLE_ARG(PUSH) {
                 STACK_PUSH(arg);
                 ++i;
             }
             break;
-            HANDLE(D_ADD) {
+            HANDLE(OP_ADD) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
                 ray_object *v = OBJ_ADD(op1, op2);
@@ -64,7 +76,7 @@ void eval(compiler *c) {
                 }
             }
             break;
-            HANDLE(D_SUB) {
+            HANDLE(OP_SUB) {
                 ray_object *op2 = STACK_POP();
                 ray_object *op1 = STACK_POP();
                 ray_object *v = OBJ_SUB(op1, op2);
@@ -76,7 +88,7 @@ void eval(compiler *c) {
                 }
             }
             break;
-            HANDLE(D_MUL) {
+            HANDLE(OP_MUL) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
                 ray_object *v = OBJ_MUL(op1, op2);
@@ -88,7 +100,7 @@ void eval(compiler *c) {
                 }
             }
             break;
-            HANDLE(D_DIV) {
+            HANDLE(OP_DIV) {
                 ray_object *op2 = STACK_POP();
                 ray_object *op1 = STACK_POP();
                 ray_object *v = OBJ_DIV(op1, op2);
@@ -100,11 +112,9 @@ void eval(compiler *c) {
                 }
             }
             break;
-            HANDLE(PRINT) {
+            HANDLE_ARG(PRINT) {
                 ray_object *v = STACK_POP();
-                if(NUMBER_EXACT(v)) {
-                    printf("%lf\n", NUMBER_OBJ_AS_NUMBER(v));
-                }
+                printf("%s\n", STRING_OBJ_AS_STRING(OBJ_STR(v)));
                 ++i;
             }
             break;
@@ -125,10 +135,17 @@ void eval(compiler *c) {
                 len = b->code_len;
             }
             break;
-            HANDLE(JUMP_FALSE) {
+            VM_HANDLE_OP_BIN(EQ);
+            VM_HANDLE_OP_BIN(NE);
+            VM_HANDLE_OP_BIN(LT);
+            VM_HANDLE_OP_BIN(GT);
+            VM_HANDLE_OP_BIN(LE);
+            VM_HANDLE_OP_BIN(GE);
+
+            HANDLE(JUMP_TRUE) {
                 ray_object *op = STACK_POP();
-                if(NUMBER_EXACT(op)) {
-                    if(OBJ_IS_FALSE(OBJ_EQUALS(op, new_number_object_from_long(0L)))) {
+                if(OBJ_IS_TRUE(BOOL_EXACT(op))) {
+                    if(OBJ_IS_FALSE(op)) {
                         ++i;
                     }
                     else {
@@ -141,9 +158,27 @@ void eval(compiler *c) {
                 }
             }
             break;
+            HANDLE(JUMP_FALSE) {
+                ray_object *op = STACK_POP();
+                if(BOOL_EXACT(op)) {
+                    if(OBJ_IS_TRUE(op)) {
+                        ++i;
+                    }
+                    else {
+                        b = b->code[i].jmp_block;
+                        i = 0;
+                        len = b->code_len;
+                    }
+                } else {
+                    QUIT_VM("type error!\n");
+                }
+            }
+            break;
+        default:
+            QUIT_VM("Unknown op code %d\n", opcode);
         }
 #ifdef VM_DEBUG
-        R_DEBUG("STACK SIZE:%d\n", stack_pos);
+        R_DEBUG("STACK SIZE:%d", stack_pos);
 #endif
         if(i == len) {
             b = b->next;
@@ -156,7 +191,10 @@ void eval(compiler *c) {
 
     assert(stack_pos == 1);
     ray_object *ret = STACK_POP();
-    printf("Execute result:%lf\n", NUMBER_OBJ_AS_NUMBER(ret));
+#ifdef VM_DEBUG
+    printf("\n");
+#endif
+    printf("Execute result: %s\n", STRING_OBJ_AS_STRING(OBJ_STR(ret)));
 
 clear:
     ;

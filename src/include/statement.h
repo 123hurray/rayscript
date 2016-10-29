@@ -13,20 +13,28 @@ typedef enum {
     STATEMENT_TYPE_ASSIGN,
     STATEMENT_TYPE_IF,
     STATEMENT_TYPE_PRINT,
-    STATEMENT_TYPE_EMPTY
+    STATEMENT_TYPE_FOR_FROM_TO
 } statement_type;
 typedef enum {
     FACTOR_TYPE_INT,
     FACTOR_TYPE_FLOAT,
     FACTOR_TYPE_IDENTIFIER,
-    FACTOR_TYPE_EXP
+    FACTOR_TYPE_EXP,
+    FACTOR_TYPE_BOOL,
+    FACTOR_TYPE_NIL
 } factor_type;
 
 typedef enum {
-    OP_ADD,
-    OP_SUB,
-    OP_MUL,
-    OP_DIV
+    OP_TYPE_EQ,
+    OP_TYPE_NE,
+    OP_TYPE_LT,
+    OP_TYPE_GT,
+    OP_TYPE_LE,
+    OP_TYPE_GE,
+    OP_TYPE_ADD,
+    OP_TYPE_SUB,
+    OP_TYPE_MUL,
+    OP_TYPE_DIV
 } operator_type;
 
 typedef enum {
@@ -42,6 +50,7 @@ typedef struct _if_statement_node if_statement_node;
 typedef struct _statement_node statement_node;
 typedef struct _statement_list_node statement_list_node;
 typedef struct _compound_statement_node compound_statement_node;
+typedef struct _for_from_to_statement_node for_from_to_statement_node;
 typedef struct _assign_node assign_node;
 #include "rayscript.tab.h"
 
@@ -59,6 +68,7 @@ struct _statement_node {
         assign_node* an;
         print_statement_node* psn;
         if_statement_node* isn;
+        for_from_to_statement_node* fftn;
     };
 };
 
@@ -102,7 +112,14 @@ struct _assign_node {
     statement_node * rval;
 };
 
-
+struct _for_from_to_statement_node {
+    AST_HEADER;
+    char* i;
+    statement_node* from;
+    statement_node* to;
+    statement_node* step;
+    compound_statement_node* body; 
+};
 
 
 

@@ -22,17 +22,30 @@ case op:\
 DEBUG_OP(#op);
 
 
+#define HANDLE_ARG(op) \
+HANDLE_##op: \
+case op:\
+DEBUG_OP_ARG(#op);
+
+
 
 #ifdef VM_DEBUG
 
 #define DEBUG_OP(v) {\
-    R_DEBUG(v"\n");\
+    R_DEBUG("\n%p:%-6d%-24s", b, i, v);\
+}
+
+
+
+#define DEBUG_OP_ARG(v) {\
+    R_DEBUG("\n%p:%-6d%-12s%-12s", b, i, v, STRING_OBJ_AS_STRING(OBJ_STR(arg)));\
 }
 
 
 #else
 
 #define DEBUG_OP(v)
+#define DEBUG_OP_ARG(v)
 
 #endif
 
@@ -50,7 +63,7 @@ DEBUG_OP(#op);
     } \
     stack[stack_pos] = v; \
     ++stack_pos; \
-} while(0);
+} while(0)
     
 #define STACK_GET(v) (\
     (stack_pos < 1)? \

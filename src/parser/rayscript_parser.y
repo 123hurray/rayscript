@@ -19,14 +19,18 @@ int yyerror();
 %define api.push-pull both
  /* declare tokens */
 %token INTERP_START
-%token INT_TOKEN FLOAT_TOKEN 
-%token OPERATOR OP CP ASSIGN IDENTIFIER 
+%token INT_TOKEN FLOAT_TOKEN BOOL_TOKEN NIL_TOKEN
+%token OPERATOR OP CP ASSIGN_TOKEN IDENTIFIER 
 %token EOL 
 %token IF_TOKEN ELSE_TOKEN LB RB SC 
 %token PRINT_TOKEN
 %token TYPE_TERM TYPE_FACTOR
-%token AND_TOKEN OR_TOKEN EQUALS_TOKEN
-%right EQUALS_TOKEN
+%token AND_TOKEN OR_TOKEN EQUALITY_TOKEN RELATIONAL_TOKEN
+%token FOR_TOKEN FROM_TOKEN TO_TOKEN STEP_TOKEN
+%token LOOP_TOKEN
+%right ASSIGN_TOKEN
+%left EQUALITY_TOKEN
+%left RELATIONAL_TOKEN
 %left OPERATOR_1
 %left OPERATOR_2
 %union{
@@ -38,6 +42,8 @@ int yyerror();
     statement_node* sn;
     exp_node* en;
     factor_node* fn;
+    for_from_to_statement_node* ffts;
+    bool_object* b;
     char* str;
     double fnum;
     long inum;
@@ -52,9 +58,13 @@ int yyerror();
 %type <sn> statement;
 %type <en> exp;
 %type <fn> factor;
+%type <ffts> for_from_to_statement;
 %type <fnum> FLOAT_TOKEN;
 %type <inum> INT_TOKEN;
+%type <b> BOOL_TOKEN;
 %type <str> IDENTIFIER;
+%type <op> EQUALITY_TOKEN;
+%type <op> RELATIONAL_TOKEN;
 %type <op> OPERATOR_1;
 %type <op> OPERATOR_2;
 %nonassoc EOL
@@ -132,7 +142,15 @@ statement: compound_statement {
     e->next = NULL;
     e->psn = $1;
     $$ = e; 
-};
+}
+| for_from_to_statement {
+    statement_node* e = MAKE_AST_NODE(statement_node);
+    e->type = STATEMENT_TYPE_FOR_FROM_TO;
+    e->next = NULL;
+    e->fftn = $1;
+    $$ = e; 
+}
+
 print_statement: PRINT_TOKEN exp {
     print_statement_node *e = MAKE_AST_NODE(print_statement_node);
     e->exp = $2;
@@ -163,6 +181,23 @@ exp: factor {
     e->op4= $1;
     $$ = e;
 } 
+
+| exp EQUALITY_TOKEN exp {
+    exp_node *e = MAKE_AST_NODE(exp_node);
+    e->type = EXP_TYPE_OP;
+    e->op1 = $1;
+    e->op2 = $3; 
+    e->op3 = $2;
+    $$ = e; 
+}
+| exp RELATIONAL_TOKEN exp {
+    exp_node *e = MAKE_AST_NODE(exp_node);
+    e->type = EXP_TYPE_OP;
+    e->op1 = $1;
+    e->op2 = $3; 
+    e->op3 = $2;
+    $$ = e; 
+}
  | exp OPERATOR_1 exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
     e->type = EXP_TYPE_OP;
@@ -202,11 +237,32 @@ factor : INT_TOKEN {
     e->type = FACTOR_TYPE_EXP;
     e->exp = $2;
     $$ = e;
+} 
+| BOOL_TOKEN {
+    factor_node* e = MAKE_AST_NODE(factor_node);
+    e->type = FACTOR_TYPE_BOOL;
+    e->val = (ray_object*)$1;
+    $$ = e;
 }
+| NIL_TOKEN {
+    factor_node* e = MAKE_AST_NODE(factor_node);
+    e->type = FACTOR_TYPE_NIL;
+    e->val = (ray_object*)nil;
+    $$ = e;
+};
 
-;
 
-assign: IDENTIFIER ASSIGN statement {
+for_from_to_statement: FOR_TOKEN IDENTIFIER FROM_TOKEN statement TO_TOKEN statement STEP_TOKEN statement compound_statement {
+    for_from_to_statement_node *e = MAKE_AST_NODE(for_from_to_statement_node);
+    e->i = $2;
+    e->from = $4;
+    e->to = $6;
+    e->step = $8;
+    e->body = $9;
+    $$ = e;
+};
+
+assign: IDENTIFIER ASSIGN_TOKEN statement {
     assign_node* e = MAKE_AST_NODE(assign_node);
     e->lval = $1;
     e->rval = $3;
@@ -267,11 +323,13 @@ void normal_mode() {
     yyparse();
     compiler *c = new_compiler();
     continue_compiler(c);
-    visit_statement_list(c, root);
+    if(root) {
+        visit_statement_list(c, root);
 #ifdef PARSE_DEBUG
-    R_DEBUG("******op code generated!******\n");
+        R_DEBUG("******op code generated!******\n");
 #endif
-    eval(c);
+        eval(c);
+    }
 }
 int main(int argc, char **argv) {
     if(argc == 2) {
@@ -279,6 +337,7 @@ int main(int argc, char **argv) {
     } else {
         is_interactive = 1;
     }
+    init_objects();
     if(is_interactive) {
         interactive_mode();
     } else {

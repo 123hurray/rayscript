@@ -81,7 +81,7 @@ ray_object * map_get(ray_object* self, ray_object *key) {
     int index = hash % map->allocated;
     entry_object* e = map->table[index];
     while(e) {
-        if(e->hash == hash && OBJ_IS_TRUE(OBJ_EQUALS(e->key, key))) {
+        if(e->hash == hash && OBJ_EQ(e->key, key)) {
             return e->val;
         }
         e = e->next;

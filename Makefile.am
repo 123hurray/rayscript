@@ -22,8 +22,11 @@ $(top_srcdir)/src/parser/rayscript_lexer.c: $(top_srcdir)/src/parser/rayscript_l
 $(top_srcdir)/src/parser/rayscript_parser.c: $(top_srcdir)/src/parser/rayscript_parser.y
 	bison -Werror --verbose -t --defines=$(top_srcdir)/src/include/rayscript.tab.h -o $(top_srcdir)/src/parser/rayscript_parser.c $(top_srcdir)/src/parser/rayscript_parser.y
 
+debug_lexer: $(top_srcdir)/src/parser/rayscript_lexer.c
+	$(CC) -I./src/include -DDEBUG_LEXER src/parser/rayscript_lexer.c -o debug_lexer
 
 AM_CFLAGS=-I$(top_srcdir)/src/include  -std=c99 -Werror
 export AM_CFLAGS
 clean-local: 
 	--rm -rf $(top_srcdir)/src/parser/rayscript_lexer.c $(top_srcdir)/src/parser/rayscript_parser.c $(top_srcdir)/src/include/rayscript.tab.h
+	test -z "debug_lexer" || rm -f debug_lexer

@@ -17,21 +17,38 @@ long string_object_hash(ray_object *self) {
     return hash;
 }
 
-bool_object *string_object_equals(ray_object * self, ray_object * other) {
+int string_object_equals(ray_object * self, ray_object * other) {
     if(self == NULL) {
-        return (other == NULL)?p_bool_true:p_bool_false;
+        return (other == NULL)?CMP_RELATIONAL_EQ:CMP_LT;
     }
     if(other == NULL) {
-        return p_bool_false;
+        return CMP_GT;
     }
-    return (strcmp(STRING_OBJ_AS_STRING(self), STRING_OBJ_AS_STRING(other)) == 0)?p_bool_true:p_bool_false;
+    int val = strcmp(STRING_OBJ_AS_STRING(self), STRING_OBJ_AS_STRING(other));
+    if(val == 0) {
+        return CMP_RELATIONAL_EQ;
+    } else if(val < 0) {
+        return CMP_LT;
+    } else {
+        return CMP_GT;
+    }
+    
+}
+
+string_object* string_str(ray_object* self) {
+    return (string_object*)self;
 }
 
 type_object string_type_object = {
     &base_type_object,
     "string",
     string_object_hash,
-    string_object_equals
+    string_object_equals,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    string_str
 };
 string_object *new_string_object(char * str) {
     string_object *str_obj = (string_object *)malloc(sizeof(string_object));

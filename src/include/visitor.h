@@ -10,7 +10,8 @@
 
 #ifdef PARSE_DEBUG
 #define ADD_OP(c, o) do{R_DEBUG(#o"\n");add_op(c, o);}while(0)
-#define ADD_OP_ARG(c, o, a) do{R_DEBUG(#o"\n");add_op_arg(c, o, a);}while(0)
+
+#define ADD_OP_ARG(c, o, a) do{R_DEBUG("%-16s%16s\n", #o, STRING_OBJ_AS_STRING(OBJ_STR(a)));add_op_arg(c, o, a);}while(0)
 #define ADD_OP_JMP(c, o, t) do{R_DEBUG(#o"\n");add_op_jmp(c, o, t);}while(0)
 
 #else

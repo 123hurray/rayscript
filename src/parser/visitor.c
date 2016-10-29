@@ -5,33 +5,30 @@
 #include <vm.h>
 #include <visitor.h>
 #include <rayscript.tab.h>
-
+#define HANDLE_BIN_OP(op) \
+    case OP_TYPE_##op:\
+        visit_exp(c, op1);\
+        visit_exp(c, op2);\
+        ADD_OP(c, OP_##op);\
+        break
 void visit_exp(compiler *c, exp_node *node) {
     switch(node->type) {
     case EXP_TYPE_OP: {
         exp_node *op1 = node->op1;
         exp_node *op2 = node->op2;
         switch(node->op3) {
-        case OP_ADD:
-            visit_exp(c, op1);
-            visit_exp(c, op2);
-            ADD_OP(c, D_ADD);
-            break;
-        case OP_SUB:
-            visit_exp(c, op1);
-            visit_exp(c, op2);
-            ADD_OP(c, D_SUB);
-            break;
-        case OP_MUL:
-            visit_exp(c, op1);
-            visit_exp(c, op2);
-            ADD_OP(c, D_MUL);
-            break;
-        case OP_DIV:
-            visit_exp(c, op1);
-            visit_exp(c, op2);
-            ADD_OP(c, D_DIV);
-            break;
+        HANDLE_BIN_OP(ADD);
+        HANDLE_BIN_OP(SUB);
+        HANDLE_BIN_OP(MUL);
+        HANDLE_BIN_OP(DIV);
+        HANDLE_BIN_OP(LT);
+        HANDLE_BIN_OP(GT);
+        HANDLE_BIN_OP(LE);
+        HANDLE_BIN_OP(GE);
+        HANDLE_BIN_OP(NE);
+        HANDLE_BIN_OP(EQ);
+        default:
+            R_FATAL("Unknown operator type: %d", node->op3);
         }
     }
     break;
@@ -50,6 +47,8 @@ void visit_factor(compiler *c, factor_node * node) {
     switch(node->type) {
     case FACTOR_TYPE_INT:
     case FACTOR_TYPE_FLOAT:
+    case FACTOR_TYPE_BOOL:
+    case FACTOR_TYPE_NIL:
         ADD_OP_ARG(c, PUSH, node->val);
         break;
     case FACTOR_TYPE_EXP:
@@ -106,7 +105,40 @@ void visit_compound_statement(compiler *c, compound_statement_node *node) {
         visit_statement_list(c, list_node);
     }
 }
+void visit_for_from_to (compiler* c, for_from_to_statement_node *node) {
 
+    // from, init i 
+    visit_statement(c, node->from);
+    ray_object* i = (ray_object*)new_string_object(node->i);
+    ADD_OP_ARG(c, PUSH, i);
+    ADD_OP(c, STORE_NAME);
+    ADD_OP(c, POP);
+
+    // to, test i
+    code_block* to_block = new_code_block();
+    use_code_block_next(c, to_block);
+    ADD_OP_ARG(c, LOAD_NAME, i);
+    // dup name so value of for will be set
+    ADD_OP(c, DUP);
+    visit_statement(c, node->to);
+    ADD_OP(c, OP_EQ);
+    code_block* end_block = new_code_block();
+    ADD_OP_JMP(c, JUMP_TRUE, end_block);
+
+    // body
+
+    // pop i that dup before
+    ADD_OP(c, POP);
+    visit_compound_statement(c, node->body);
+    ADD_OP(c, POP);
+    visit_statement(c, node->step);
+    ADD_OP(c, POP);
+    ADD_OP_JMP(c, JUMP, to_block);
+
+    // end
+    use_code_block_next(c, end_block);
+
+}
 void visit_statement(compiler *c, statement_node * node) {
     switch(node->type) {
     case STATEMENT_TYPE_EXP:
@@ -124,6 +156,9 @@ void visit_statement(compiler *c, statement_node * node) {
     case STATEMENT_TYPE_COMPOUND:
         visit_compound_statement(c, node->csn);
         break;
+    case STATEMENT_TYPE_FOR_FROM_TO:
+        visit_for_from_to(c, node->fftn);
+        break;
     default:
         R_FATAL("ast_node type %d error!", node->type);
     }
@@ -136,20 +171,13 @@ void code_gen(compiler *c, statement_list_node *node) {
 
 }
 void visit_statement_list(compiler *c, statement_list_node * node) {
-    int executed = 0;
     statement_node * n = node->next;
     while(n) {
-        if(n->type != STATEMENT_TYPE_EMPTY) {
-            executed = 1;
-            visit_statement(c, n);
-            if(n->next) {
-                ADD_OP(c, POP);
-            }
+        visit_statement(c, n);
+        if(n->next) {
+            ADD_OP(c, POP);
         }
         n = n->next;
-    }
-    if(executed == 0) {
-        ADD_OP_ARG(c, PUSH, (ray_object*)&nil);
     }
 }
 

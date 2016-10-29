@@ -1,4 +1,5 @@
 #include <number_object.h>
+#include <stdio.h>
 
 long number_object_hash(ray_object* self) {
     return (long)NUMBER_OBJ_AS_NUMBER(self);
@@ -6,16 +7,43 @@ long number_object_hash(ray_object* self) {
 
 #define AS_NUMBER(o) ((number_object*)(o))
 
-bool_object* number_equals(ray_object* self, ray_object* other) {
+string_object* number_str(ray_object* self) {
+    char s[256];
+    if(OBJ_IS_TRUE(IS_NUMBER_TYPE_LONG(self))) {
+        sprintf(s, "%ld", AS_NUMBER(self)->val.l);
+    } else {
+        sprintf(s, "%lf", AS_NUMBER(self)->val.d);
+    }
+
+    return new_string_object(s); 
+}
+
+int number_equals(ray_object* self, ray_object* other) {
     if(self == other) {
-        return p_bool_true;
+        return CMP_RELATIONAL_EQ;
     }
 
     if(OBJ_IS_TRUE(IS_NUMBER_TYPE_LONG(self))
             && OBJ_IS_TRUE(IS_NUMBER_TYPE_LONG(other))) {
-        return (AS_NUMBER(self)->val.l == AS_NUMBER(other)->val.l)?p_bool_true:p_bool_false;
+        long a = AS_NUMBER(self)->val.l;
+        long b = AS_NUMBER(other)->val.l;
+        if(a == b) {
+            return CMP_RELATIONAL_EQ;
+        } else if (a > b) {
+            return CMP_GT;
+        } else {
+            return CMP_LT;
+        }
     } else {
-        return (NUMBER_OBJ_AS_NUMBER(self) == NUMBER_OBJ_AS_NUMBER(other))?p_bool_true:p_bool_false;
+        double a = NUMBER_OBJ_AS_NUMBER(self);
+        double b = NUMBER_OBJ_AS_NUMBER(other);
+        if(a == b) {
+            return CMP_RELATIONAL_EQ;
+        } else if (a > b) {
+            return CMP_GT;
+        } else {
+            return CMP_LT;
+        }
     }
 }
 
@@ -25,7 +53,7 @@ bool_object* number_equals(ray_object* self, ray_object* other) {
 
 ray_object* number_add(ray_object* self, ray_object* other) {
     if(OBJ_IS_FALSE(NUMBER_EXACT(self)) || OBJ_IS_FALSE(NUMBER_EXACT(other))) {
-        return (ray_object*)&nil;
+        return (ray_object*)nil;
     }
     if(IS_NUMBER_TYPE_LONG(self) == p_bool_true && IS_NUMBER_TYPE_LONG(other) == p_bool_true) {
         return (ray_object*)new_number_object_from_long(NUMBER_OBJ_AS_NUMBER(self) + NUMBER_OBJ_AS_NUMBER(other));
@@ -36,7 +64,7 @@ ray_object* number_add(ray_object* self, ray_object* other) {
 
 ray_object* number_sub(ray_object* self, ray_object* other) {
     if(OBJ_IS_FALSE(NUMBER_EXACT(self)) || OBJ_IS_FALSE(NUMBER_EXACT(other))) {
-        return (ray_object*)&nil;
+        return (ray_object*)nil;
     }
     if(IS_NUMBER_TYPE_LONG(self) == p_bool_true && IS_NUMBER_TYPE_LONG(other) == p_bool_true) {
         return (ray_object*)new_number_object_from_long(NUMBER_OBJ_AS_NUMBER(self) - NUMBER_OBJ_AS_NUMBER(other));
@@ -48,7 +76,7 @@ ray_object* number_sub(ray_object* self, ray_object* other) {
 
 ray_object* number_mul(ray_object* self, ray_object* other) {
     if(OBJ_IS_FALSE(NUMBER_EXACT(self)) || OBJ_IS_FALSE(NUMBER_EXACT(other))) {
-        return (ray_object*)&nil;
+        return (ray_object*)nil;
     }
     if(IS_NUMBER_TYPE_LONG(self) == p_bool_true && IS_NUMBER_TYPE_LONG(other) == p_bool_true) {
         return (ray_object*)new_number_object_from_long(NUMBER_OBJ_AS_NUMBER(self) * NUMBER_OBJ_AS_NUMBER(other));
@@ -61,7 +89,7 @@ ray_object* number_mul(ray_object* self, ray_object* other) {
 
 ray_object* number_div(ray_object* self, ray_object* other) {
     if(OBJ_IS_FALSE(NUMBER_EXACT(self)) || OBJ_IS_FALSE(NUMBER_EXACT(other))) {
-        return (ray_object*)&nil;
+        return (ray_object*)nil;
     }
     if(IS_NUMBER_TYPE_LONG(self) == p_bool_true && IS_NUMBER_TYPE_LONG(other) == p_bool_true) {
         return (ray_object*)new_number_object_from_long(NUMBER_OBJ_AS_NUMBER(self) / NUMBER_OBJ_AS_NUMBER(other));
@@ -97,4 +125,5 @@ type_object number_type_object = {
     number_sub,
     number_mul,
     number_div,
+    number_str,
 };
