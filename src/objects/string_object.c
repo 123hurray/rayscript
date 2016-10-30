@@ -24,6 +24,9 @@ int string_object_equals(ray_object * self, ray_object * other) {
     if(other == NULL) {
         return CMP_GT;
     }
+    if(OBJ_IS_FALSE(STRING_EXACT(other))) {
+        return CMP_NOT_RELATIONAL_NE;
+    }
     int val = strcmp(STRING_OBJ_AS_STRING(self), STRING_OBJ_AS_STRING(other));
     if(val == 0) {
         return CMP_RELATIONAL_EQ;

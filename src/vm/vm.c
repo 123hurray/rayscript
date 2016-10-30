@@ -30,7 +30,7 @@ void eval(compiler *c) {
     int stack_pos = 0;
     int i = 0;
     int len = b->code_len;
-    ray_object* arg = NULL;
+    int arg = 0;
     op_t opcode;
     while(b != NULL && i < len) {
         instr *instruction = &b->code[i];
@@ -39,28 +39,29 @@ void eval(compiler *c) {
             arg = instruction->oparg;
         }
         switch(opcode) {
-            HANDLE(STORE_NAME) {
-                ray_object *op1 = STACK_POP();
-                ray_object *op2 = STACK_GET();
-                if(OBJ_IS_TRUE(STRING_EXACT(op1))) {
-                    map_put((ray_object*)c->lb->locals, op1, op2);
-                } else {
-                    QUIT_VM("Invalid name!\n");
-                }
+            HANDLE_ARG(STORE_NAME) {
+                ray_object *op = STACK_GET();
+                ray_object *v = list_get((ray_object*)c->lb->consts, arg);
+                map_put((ray_object*)c->lb->locals, v, op);
                 ++i;
             }
             break;
             HANDLE_ARG(LOAD_NAME) {
-                ray_object *val = map_get((ray_object *)c->lb->locals, arg);
+                ray_object* v = list_get((ray_object *)c->lb->consts, arg);
+                ray_object *val = map_get((ray_object *)c->lb->locals, v);
                 if(val == NULL) {
-                    QUIT_VM("Undefined variable %s\n", STRING_OBJ_AS_STRING(arg));
+#ifdef PARSE_DEBUG
+                    printf("\n");
+#endif
+                    QUIT_VM("Undefined variable %s\n", STRING_OBJ_AS_STRING(v));
                 }
                 STACK_PUSH(val);
                 ++i;
             }
             break;
             HANDLE_ARG(PUSH) {
-                STACK_PUSH(arg);
+                ray_object* v = list_get((ray_object *)c->lb->consts, arg);
+                STACK_PUSH(v);
                 ++i;
             }
             break;
@@ -112,7 +113,7 @@ void eval(compiler *c) {
                 }
             }
             break;
-            HANDLE_ARG(PRINT) {
+            HANDLE(PRINT) {
                 ray_object *v = STACK_POP();
                 printf("%s\n", STRING_OBJ_AS_STRING(OBJ_STR(v)));
                 ++i;

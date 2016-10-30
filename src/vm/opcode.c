@@ -12,6 +12,7 @@ logic_block *new_logic_block() {
     lb->eval_block = lb->cb = NULL;
     lb->globals = new_map_object(1);
     lb->locals = new_map_object(1);
+    lb->consts = new_list_object(1);
     return lb;
 }
 
@@ -62,11 +63,11 @@ void add_op(compiler *c, unsigned char op) {
     ensure_size(block);
     instr *i = &block->code[block->code_len];
     i->opcode = op;
-    i->oparg = NULL;
+    i->oparg = -1;
     ++block->code_len;
 }
 
-void add_op_arg(compiler *c, unsigned char op, ray_object* val) {
+void add_op_arg(compiler *c, unsigned char op, int val) {
     code_block *block = c->lb->cb;
     ensure_size(block);
     instr * i = &block->code[block->code_len];
@@ -79,7 +80,7 @@ void add_op_jmp(compiler *c, unsigned char op, code_block* b) {
     ensure_size(block);
     instr * i = &block->code[block->code_len];
     i->opcode = op;
-    i->oparg = NULL;
+    i->oparg = -1;
     i->jmp_block = b;
     ++block->code_len;
 }

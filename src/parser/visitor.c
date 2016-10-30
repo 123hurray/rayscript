@@ -39,17 +39,26 @@ void visit_exp(compiler *c, exp_node *node) {
         R_FATAL("exp_node type %d error!\n", node->type);
     }
 }
+int store_obj(compiler *c, ray_object* obj) {
+    long i = list_find((ray_object*)c->lb->consts, obj);
+    if(i < 0) {
+        i = list_append((ray_object *)c->lb->consts, obj);
+    }
+    return (int)i;
+}
 void visit_rname(compiler *c, ray_object *name) {
-    ADD_OP_ARG(c, LOAD_NAME, name);
-
+    int i = store_obj(c, name);
+    ADD_OP_ARG(c, LOAD_NAME, i);
 }
 void visit_factor(compiler *c, factor_node * node) {
     switch(node->type) {
     case FACTOR_TYPE_INT:
     case FACTOR_TYPE_FLOAT:
     case FACTOR_TYPE_BOOL:
-    case FACTOR_TYPE_NIL:
-        ADD_OP_ARG(c, PUSH, node->val);
+    case FACTOR_TYPE_NIL: {
+            int i = store_obj(c, node->val);
+            ADD_OP_ARG(c, PUSH, i);
+        }
         break;
     case FACTOR_TYPE_EXP:
         visit_exp(c, node->exp);
@@ -65,15 +74,19 @@ void visit_factor(compiler *c, factor_node * node) {
     }
 }
 
-void visit_lname(compiler *c, char* node) {
+int visit_lname(compiler *c, char* node) {
     string_object *str_obj = new_string_object(node);
-    ADD_OP_ARG(c, PUSH, (ray_object *)str_obj);
+    long i = list_find((ray_object*)c->lb->consts, (ray_object*)str_obj);
+    if(i < 0) {
+        i = list_append((ray_object *)c->lb->consts, (ray_object *)str_obj);
+    }
+    return (int)i;
 }
 
 void visit_assign(compiler *c, assign_node * node) {
     visit_statement(c, node->rval);
-    visit_lname(c, node->lval);
-    ADD_OP(c, STORE_NAME);
+    int index = visit_lname(c, node->lval);
+    ADD_OP_ARG(c, STORE_NAME, index);
 }
 void visit_if(compiler *c, if_statement_node *node) {
     code_block * next = new_code_block();
@@ -88,7 +101,8 @@ void visit_if(compiler *c, if_statement_node *node) {
         visit_compound_statement(c, node->els);
     } else {
         // Make fake else return nil
-        ADD_OP_ARG(c, PUSH, (ray_object *)nil);
+        int i = (int)list_append((ray_object*)c->lb->consts, AS_OBJ(nil));
+        ADD_OP_ARG(c, PUSH, i);
     }
     
     use_code_block_next(c, end);
@@ -109,15 +123,18 @@ void visit_for_from_to (compiler* c, for_from_to_statement_node *node) {
 
     // from, init i 
     visit_statement(c, node->from);
-    ray_object* i = (ray_object*)new_string_object(node->i);
-    ADD_OP_ARG(c, PUSH, i);
-    ADD_OP(c, STORE_NAME);
+    ray_object* name = (ray_object*)new_string_object(node->i);
+    long i = list_find((ray_object*)c->lb->consts, name);
+    if(i < 0) {
+        i = list_append((ray_object *)c->lb->consts, name);
+    }
+    ADD_OP_ARG(c, STORE_NAME, (int)i);
     ADD_OP(c, POP);
 
     // to, test i
     code_block* to_block = new_code_block();
     use_code_block_next(c, to_block);
-    ADD_OP_ARG(c, LOAD_NAME, i);
+    ADD_OP_ARG(c, LOAD_NAME, (int)i);
     // dup name so value of for will be set
     ADD_OP(c, DUP);
     visit_statement(c, node->to);

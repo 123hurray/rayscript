@@ -32,13 +32,13 @@ DEBUG_OP_ARG(#op);
 #ifdef VM_DEBUG
 
 #define DEBUG_OP(v) {\
-    R_DEBUG("\n%p:%-6d%-24s", b, i, v);\
+    R_DEBUG("\n%p:%-6d%-28s", b, i, v);\
 }
 
 
 
 #define DEBUG_OP_ARG(v) {\
-    R_DEBUG("\n%p:%-6d%-12s%-12s", b, i, v, STRING_OBJ_AS_STRING(OBJ_STR(arg)));\
+    R_DEBUG("\n%p:%-6d%-12s%3d %10s  ", b, i, v, arg, STRING_OBJ_AS_STRING(OBJ_STR(list_get(AS_OBJ((c)->lb->consts), (arg)))));\
 }
 
 
@@ -76,7 +76,7 @@ DEBUG_OP_ARG(#op);
 typedef struct _code_block code_block;
 typedef struct _instr {
     unsigned char opcode;
-    ray_object* oparg;
+    int oparg;
     code_block* jmp_block;
 } instr;
 
@@ -91,6 +91,7 @@ typedef struct {
     code_block *head_block;
     code_block *eval_block;
     code_block *cb;
+    list_object *consts;
     map_object *globals;
     map_object *locals;
 } logic_block;
@@ -109,7 +110,7 @@ code_block * new_code_block();
 
 void use_code_block_next(compiler *c, code_block *nb);
 void add_op(compiler *, unsigned char);
-void add_op_arg(compiler *, unsigned char, ray_object*);
+void add_op_arg(compiler *, unsigned char, int);
 
 void add_op_jmp(compiler *c, unsigned char op, code_block* b);
 

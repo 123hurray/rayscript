@@ -9,6 +9,7 @@ rayscript_SOURCES= \
 				  	$(top_srcdir)/src/objects/type_object.c \
 				  	$(top_srcdir)/src/objects/number_object.c \
 				  	$(top_srcdir)/src/objects/string_object.c \
+				  	$(top_srcdir)/src/objects/list_object.c \
 					$(top_srcdir)/src/objects/object.c \
 					$(top_srcdir)/src/vm/vm.c \
 					$(top_srcdir)/src/vm/opcode.c \

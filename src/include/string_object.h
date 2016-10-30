@@ -16,6 +16,6 @@ type_object string_type_object;
 string_object *new_string_object(char* val);
 #define STRING_EXACT(o) ((((ray_object *)o)->type == &string_type_object)?p_bool_true:p_bool_false)
 
-#define STRING_OBJ_AS_STRING(o) (((string_object *)o)->val)
+#define STRING_OBJ_AS_STRING(o) (((string_object *)(o))->val)
 
 #endif // STRING_OBJECT_H

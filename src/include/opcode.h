@@ -10,7 +10,7 @@ typedef unsigned char op_t;
 #define OP_SUB 2
 #define OP_MUL 3
 #define OP_DIV 4
-#define STORE_NAME 5
+#define PRINT 5
 #define JUMP_FALSE 6
 #define JUMP_TRUE 7
 #define JUMP 8
@@ -24,7 +24,7 @@ typedef unsigned char op_t;
 #define OP_GE 16
 
 #define PUSH 128
-#define PRINT 130
+#define STORE_NAME 129
 #define LOAD_NAME 131
 
 

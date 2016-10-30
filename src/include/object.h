@@ -61,6 +61,8 @@ struct _ray_object {
 #include <bool_object.h>
 #include <number_object.h>
 #include <string_object.h>
+#include <map_object.h>
+#include <list_object.h>
 
 void init_objects();
 
@@ -76,7 +78,7 @@ string_object* default_str();
 
 
 
-
+#define AS_OBJ(o) (((ray_object *)(o)))
 
 
 #define NEW_OBJ(type) ((type*)malloc(sizeof(type)))

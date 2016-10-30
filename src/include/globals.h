@@ -20,7 +20,7 @@ extern int is_interactive;
 #endif // R_ERR
 
 #define R_ERROR(v, ...) (\
-    fprintf(R_ERR, v, ##__VA_ARGS__),\
+    fflush(stdout),fprintf(R_ERR, v, ##__VA_ARGS__),\
     fflush(R_ERR))
 
 
