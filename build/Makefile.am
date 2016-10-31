@@ -31,7 +31,7 @@ rayscript_CFLAGS=-I../src/include  -std=c99 -Werror
 
 
 ../src/parser/rayscript_parser.c: ../src/parser/rayscript_parser.y
-	bison -Werror --verbose -t --defines=../src/include/rayscript.tab.h -o ../src/parser/rayscript_parser.c ../src/parser/rayscript_parser.y
+	bison -Werror --verbose --defines=../src/include/rayscript.tab.h -o ../src/parser/rayscript_parser.c ../src/parser/rayscript_parser.y
 
 debug_lexer: ../src/parser/rayscript_lexer.c
 	$(CC) -I../src/include -DDEBUG_LEXER src/parser/rayscript_lexer.c -o debug_lexer
