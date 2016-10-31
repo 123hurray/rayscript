@@ -15,7 +15,13 @@ rayscript_SOURCES= \
 					$(top_srcdir)/src/vm/vm.c \
 					$(top_srcdir)/src/vm/opcode.c \
 					$(top_srcdir)/src/parser/visitor.c
-rayscript_LDADD=
+
+
+rayscript_LDFLAGS=`pkg-config --libs --cflags libedit`
+
+
+rayscript_CFLAGS=-I$(top_srcdir)/src/include  -std=c99 -Werror 
+
 $(top_srcdir)/src/parser/rayscript_lexer.c: $(top_srcdir)/src/parser/rayscript_lexer.l $(top_srcdir)/src/parser/rayscript_parser.c
 	flex -o $(top_srcdir)/src/parser/rayscript_lexer.c $(top_srcdir)/src/parser/rayscript_lexer.l  
 
@@ -26,9 +32,6 @@ $(top_srcdir)/src/parser/rayscript_parser.c: $(top_srcdir)/src/parser/rayscript_
 debug_lexer: $(top_srcdir)/src/parser/rayscript_lexer.c
 	$(CC) -I./src/include -DDEBUG_LEXER src/parser/rayscript_lexer.c -o debug_lexer
 
-AM_CFLAGS=-I$(top_srcdir)/src/include  -std=c99 -Werror `pkg-config --libs --cflags libedit`
-
-export AM_CFLAGS
 clean-local: 
 	--rm -rf $(top_srcdir)/src/parser/rayscript_lexer.c $(top_srcdir)/src/parser/rayscript_parser.c $(top_srcdir)/src/include/rayscript.tab.h
 	test -z "debug_lexer" || rm -f debug_lexer
