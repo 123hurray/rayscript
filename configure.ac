@@ -11,7 +11,16 @@ AM_INIT_AUTOMAKE
 AC_PROG_CC
 # Checks for libraries.
 AC_HEADER_STDC
-PKG_CHECK_MODULES(LIBEDIT, libedit)
+AC_ARG_ENABLE([editline], AS_HELP_STRING([--disable-editline], [disable libeditline]))
+
+AS_IF([test "x$enable_editline" != "xno"],
+    [
+        PKG_CHECK_MODULES(LIBEDIT, libedit)
+        AC_DEFINE([HAVE_EDITLINE], [1], [Define to 1 if you want to enable libeditline])
+    ]
+)
+
+AM_CONDITIONAL([EDITLINE], [test "x$enable_editline" != "xno"])
 
 # Checks for header files.
 

@@ -13,25 +13,65 @@ YYSTYPE yylval;
 
 #endif
 extern int fileno(FILE*);
+#ifdef HAVE_EDITLINE
 #include <editline/readline.h>
 #define YY_INPUT(buf, result, max_size) result = mygetinput(buf, max_size);
 extern int line_status;
-static int mygetinput(char *buf, int size) {
-    char *line;
-    if (feof(yyin))  return YY_NULL;
-    if(line_status == 0) {
-        line = readline(">>>");
+static int mygetinput(char *buf, int max_size) {
+    if(is_interactive) {
+        char *line;
+        if (feof(yyin)) {
+            return YY_NULL;
+        }
+        if(line_status == 0) {
+            line = readline(">>>");
+        } else {
+            line = readline("...");
+        }
+        if(!line) {
+            return YY_NULL;
+        }
+        if(strlen(line) > max_size - 2) {
+            R_ERROR("input line too long\n");
+            return YY_NULL; 
+        }
+        sprintf(buf,"%s\n",line);
+        add_history(line);
+        free(line);
+        return strlen(buf);
     } else {
-        line = readline("...");
+        // Copy from default YY_INPUT
+        if(YY_CURRENT_BUFFER_LVALUE->yy_is_interactive) {
+            int c = '*';
+            size_t n;
+            for (n = 0; n < max_size &&
+                    (c = getc( yyin )) != EOF && c != '\n'; ++n) {
+                buf[n] = (char) c;
+            }
+            if(c == '\n') {
+                buf[n++] = (char) c;
+            }
+            if(c == EOF && ferror( yyin )) {
+                R_FATAL("input in flex scanner failed");
+            }
+            return n;
+        }
+        else {
+            errno=0;
+            int result;
+            while ((result = fread(buf, 1, max_size, yyin))==0 && ferror(yyin)) {
+                if(errno != EINTR) {
+                    R_FATAL( "input in flex scanner failed" );
+                    break;
+                }
+                errno=0;
+                clearerr(yyin);
+            }
+            return result;
+        }
     }
-    if(!line)        return YY_NULL;
-    if(strlen(line) > size-2){
-        fprintf(stderr,"input line too long\n"); return YY_NULL; }
-    sprintf(buf,"%s\n",line);
-    add_history(line);
-    free(line);
-    return strlen(buf);
 }   
+#endif
 %}
 
 %%

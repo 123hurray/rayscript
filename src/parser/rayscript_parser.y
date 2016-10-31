@@ -353,7 +353,9 @@ assign: IDENTIFIER ASSIGN_TOKEN statement {
 }
 ;
 %%
+#ifdef HAVE_EDITLINE
 int line_status;
+#endif
 extern int yychar;
 extern FILE* yyin;
 extern void yyrestart(FILE*);
@@ -365,7 +367,11 @@ void interactive_mode() {
         yypstate *ps = yypstate_new ();
         yychar = INTERP_START;
         status = yypush_parse(ps);
+#ifdef HAVE_EDITLINE
         line_status = 0;
+#else 
+        printf(">>>");
+#endif
         do {
             yychar = yylex ();
             if(yychar == 0) {
@@ -373,10 +379,18 @@ void interactive_mode() {
             }
             if(yychar == EOL) {
                 if(is_last_eol == 1) {
+#ifdef HAVE_EDITLINE
                     line_status = 0;
+#else
+                    printf(">>>");
+#endif
                     continue;
                 } else {
+#ifdef HAVE_EDITLINE
                     line_status = 1;
+#else
+                    printf("...");
+#endif
                     is_last_eol = 1;
                 }
             } else {

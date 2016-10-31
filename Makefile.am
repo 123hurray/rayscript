@@ -16,8 +16,10 @@ rayscript_SOURCES= \
 					$(top_srcdir)/src/vm/opcode.c \
 					$(top_srcdir)/src/parser/visitor.c
 
-
+if EDITLINE
 rayscript_LDFLAGS=`pkg-config --libs --cflags libedit`
+rayscript_LDADD=-ledit
+endif
 
 
 rayscript_CFLAGS=-I$(top_srcdir)/src/include  -std=c99 -Werror 
