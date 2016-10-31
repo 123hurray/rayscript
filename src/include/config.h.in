@@ -1,4 +1,4 @@
-/* src/include/config.h.in.  Generated from configure.ac by autoheader.  */
+/* ../src/include/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you want to enable libeditline */
 #undef HAVE_EDITLINE

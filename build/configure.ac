@@ -3,10 +3,10 @@
 
 AC_PREREQ([2.69])
 AC_INIT([rayscript], [0.1], [123hurray@gmail.com])
-AC_CONFIG_SRCDIR([src/])
-AC_CONFIG_HEADER([src/include/config.h])
+AC_CONFIG_SRCDIR([../src/])
+AC_CONFIG_HEADER([../src/include/config.h])
 AH_BOTTOM([#include <globals.h>])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 # Checks for programs.
 AC_PROG_CC
 # Checks for libraries.

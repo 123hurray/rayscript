@@ -1,10 +1,9 @@
-/Makefile
-/Makefile.in
-/aclocal.m4
+build/Makefile
+build/Makefile.in
+build/config.log
+build/autom4te.cache
 /autoscan.log
 /autom4te.cache/
-/config.*
-/configure
 /depcomp
 /install-sh
 /libtool
@@ -22,11 +21,11 @@ src/include/stamp-h?
 *.o
 *~
 *.swp
+*.swo
 src/parser/rayscript_lexer.c
 src/parser/rayscript_parser.c
 src/include/rayscript.tab.h
 src/include/config.h
-*.in
 test*.rs
 *.py
 *.output
