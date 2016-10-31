@@ -32,3 +32,4 @@ test*.rs
 rayscript
 debug_lexer
 /.*
+rs

@@ -353,6 +353,14 @@ assign: IDENTIFIER ASSIGN_TOKEN statement {
 }
 ;
 %%
+#if defined(__clang__) && defined(__clang_major__) && defined(__clang_minor__)
+#define COMPILER "[clang %d.%d.%d]\n", __clang_major__, __clang_minor__, __clang_patchlevel__
+#elif defined(__GNUC__)
+#define COMPILER "[GCC " __VERSION__ "]\n"
+#else
+#define COMPILER "[Unknown compiler]"
+#endif
+
 #ifdef HAVE_EDITLINE
 int line_status;
 #endif
@@ -360,6 +368,8 @@ extern int yychar;
 extern FILE* yyin;
 extern void yyrestart(FILE*);
 void interactive_mode() {
+    printf("%s.\nBuild on %s with ", PACKAGE_STRING, __DATE__ " " __TIME__);
+    printf(COMPILER);
     compiler *c = new_compiler();
     int is_last_eol = 1;
     while(1) {
