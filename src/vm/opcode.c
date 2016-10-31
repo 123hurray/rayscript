@@ -1,8 +1,10 @@
+#include <config.h>
 #include <stdlib.h>
 #include <allocator.h>
 #include <opcode.h>
 #include <vm.h>
 #include <map_object.h>
+#include <memory.h>
 
 static double scale_factor = 1.5;
 
@@ -13,7 +15,28 @@ logic_block *new_logic_block() {
     lb->globals = new_map_object(1);
     lb->locals = new_map_object(1);
     lb->consts = new_list_object(1);
+    lb->stack = R_MALLOC_N(ray_object*, STACK_SIZE);
+    memset(lb->stack, 0, sizeof(ray_object*) * STACK_SIZE);
+    lb->next = lb->prev = NULL;
+    lb->pc = 0;
+    lb->stack_pos = 0;
     return lb;
+}
+
+void compiler_push_logic_block(compiler* c, logic_block* l) {
+    c->lb->next = l;
+    l->prev = c->lb;
+    c->lb = l;
+}
+
+logic_block* compiler_pop_logic_block(compiler* c) {
+    logic_block* l = c->lb;
+    c->lb = l->prev;
+    if(c->lb != NULL) {
+        c->lb->next = NULL;
+    }
+    l->prev = l->next = NULL;
+    return l;
 }
 
 void continue_compiler(compiler* c) {
@@ -27,7 +50,7 @@ void continue_compiler(compiler* c) {
 
 compiler* new_compiler() {
     compiler * c = R_MALLOC(compiler);
-    c->lb = new_logic_block();
+    c->head_lb = c->lb = new_logic_block();
     return c;
 }
 
@@ -40,7 +63,6 @@ code_block *new_code_block() {
     c->next = NULL;
     return c;
 }
-
 
 
 

@@ -13,6 +13,25 @@ YYSTYPE yylval;
 
 #endif
 extern int fileno(FILE*);
+#include <editline/readline.h>
+#define YY_INPUT(buf, result, max_size) result = mygetinput(buf, max_size);
+extern int line_status;
+static int mygetinput(char *buf, int size) {
+    char *line;
+    if (feof(yyin))  return YY_NULL;
+    if(line_status == 0) {
+        line = readline(">>>");
+    } else {
+        line = readline("...");
+    }
+    if(!line)        return YY_NULL;
+    if(strlen(line) > size-2){
+        fprintf(stderr,"input line too long\n"); return YY_NULL; }
+    sprintf(buf,"%s\n",line);
+    add_history(line);
+    free(line);
+    return strlen(buf);
+}   
 %}
 
 %%
@@ -33,6 +52,8 @@ extern int fileno(FILE*);
 "if"                                 { return IF_TOKEN;}
 "else"                               { return ELSE_TOKEN;}
 "print"                              { return PRINT_TOKEN;}
+"->"                                 { return ARROW_TOKEN;}
+","                                  { return COMMA;     }
 "and"                                { return AND_TOKEN; }
 "or"                                 { return OR_TOKEN;  }
 "=="                                 { yylval.op = OP_TYPE_EQ;return EQUALITY_TOKEN;}

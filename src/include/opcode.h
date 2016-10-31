@@ -1,7 +1,5 @@
 #ifndef OPCODE_H
 #define OPCODE_H
-#include "object.h"
-#include "map_object.h"
 typedef unsigned char op_t;
 
 
@@ -26,6 +24,7 @@ typedef unsigned char op_t;
 #define PUSH 128
 #define STORE_NAME 129
 #define LOAD_NAME 131
+#define INVOKE 132
 
 
 #define HAS_OPARG(op) (op & 128)

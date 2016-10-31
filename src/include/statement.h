@@ -1,6 +1,7 @@
 #ifndef STATEMENT_H
 #define STATEMENT_H
-#include "opcode.h"
+#include <opcode.h>
+#include <object.h>
 #define AST_HEADER 
 typedef enum ast_type_enum {EXP, TERM, FACTOR, NUM, ID, ASSIGNMENT, TYPE_PRINT, TYPE_IF, STATEMENT, STATEMENT_LIST, COMPOUND_STATEMENT} ast_type_enum;
 typedef struct {
@@ -39,7 +40,9 @@ typedef enum {
 
 typedef enum {
     EXP_TYPE_FACTOR,
-    EXP_TYPE_OP
+    EXP_TYPE_OP,
+    EXP_TYPE_FUNCTION_DEF,
+    EXP_TYPE_CALL_FUNCTION
 } exp_type;
 
 typedef struct _term_node term_node;
@@ -52,7 +55,12 @@ typedef struct _statement_list_node statement_list_node;
 typedef struct _compound_statement_node compound_statement_node;
 typedef struct _for_from_to_statement_node for_from_to_statement_node;
 typedef struct _assign_node assign_node;
-#include "rayscript.tab.h"
+typedef struct _calc_node calc_node;
+typedef struct _arg_node arg_node;
+typedef struct _function_node function_node;
+typedef struct _call_function_node call_function_node;
+typedef struct _arg_node call_arg_node;
+#include <rayscript.tab.h>
 
 struct _compound_statement_node {
     AST_HEADER;
@@ -90,13 +98,36 @@ struct _if_statement_node {
 };
 
 
+
+struct _arg_node {
+    int size;
+    list_object* arg_list;
+};
+
+struct _function_node {
+    arg_node* args;
+    compound_statement_node* body; 
+};
+
+struct _call_function_node {
+    string_object* name;
+    call_arg_node* args; 
+};
+
+struct _calc_node {
+    exp_node* l;
+    exp_node* r;
+    operator_type o;
+};
 struct _exp_node {
     AST_HEADER;
     exp_type type;
-    exp_node* op1;
-    exp_node* op2;
-    operator_type op3;
-    factor_node* op4;
+    union {
+        calc_node *op;
+        factor_node* factor;
+        function_node* function;
+        call_function_node* call;
+    };
 };
 struct _factor_node {
     AST_HEADER;

@@ -5,6 +5,7 @@
 void init_objects() {
     init_bool_object();
     init_nil_object();
+    init_function_object();
 }
 
 

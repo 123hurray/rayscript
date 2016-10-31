@@ -63,6 +63,7 @@ struct _ray_object {
 #include <string_object.h>
 #include <map_object.h>
 #include <list_object.h>
+#include <function_object.h>
 
 void init_objects();
 
@@ -111,6 +112,7 @@ string_object* default_str();
 #define OBJ_LE(o1, o2) (((o1)->type->__equals((ray_object*)(o1), (ray_object*)(o2)) & CMP_LE) == CMP_LE) 
 #define OBJ_GE(o1, o2) (((o1)->type->__equals((ray_object*)(o1), (ray_object*)(o2)) & CMP_GE) == CMP_GE) 
 
+#define OBJ_INVOKE(o, l) ((ray_object*)(o))->type->__invoke((o), (l))
 
 #define OBJ_BOOL_FROM_INT(i) (((i)==0)?p_bool_false:p_bool_true)
 

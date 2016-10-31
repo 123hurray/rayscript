@@ -6,11 +6,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef VM_DEBUG 
+#define QUIT_VM(v, ...) do{ \
+    R_DEBUG("\n");\
+    R_ERROR(v, ##__VA_ARGS__);\
+    goto clear;\
+}while(0)
+#else
 #define QUIT_VM(v, ...) do{ \
     R_ERROR(v, ##__VA_ARGS__);\
     goto clear;\
 }while(0)
-
+#endif
 
 #define VM_HANDLE_OP_BIN(op) \
     HANDLE(OP_##op) {\
@@ -25,13 +32,16 @@
 
 
 void eval(compiler *c) {
+    ray_object* ret;
+    logic_block* lb_save = c->lb;
     code_block * b = c->lb->eval_block;
-    ray_object **stack = (ray_object**)malloc(sizeof(ray_object*) * STACK_SIZE);
-    int stack_pos = 0;
-    int i = 0;
+    ray_object **stack = c->lb->stack;
+    int stack_pos = c->lb->stack_pos;
+    int i = c->lb->pc;
     int len = b->code_len;
     int arg = 0;
     op_t opcode;
+    while(c->lb != NULL) {
     while(b != NULL && i < len) {
         instr *instruction = &b->code[i];
         opcode = instruction->opcode;
@@ -39,6 +49,30 @@ void eval(compiler *c) {
             arg = instruction->oparg;
         }
         switch(opcode) {
+            HANDLE_INVOKE(INVOKE) {
+                ray_object* op1 = STACK_POP();
+                list_object* l = new_list_object(arg);
+                for(int i = 0; i < arg; ++i) {
+                    ray_object* item = STACK_POP();
+                    list_prepend(AS_OBJ(l), item);
+                }
+                ++i;
+                logic_block* new_lb = OBJ_INVOKE(op1, l);
+
+                // store runtime
+                
+                c->lb->stack_pos = stack_pos;
+                c->lb->pc = i;
+
+                compiler_push_logic_block(c, new_lb);
+
+                b = c->lb->eval_block;
+                stack = c->lb->stack;
+                stack_pos = 0;
+                i = 0;
+                len = b->code_len;
+            }
+            break;
             HANDLE_ARG(STORE_NAME) {
                 ray_object *op = STACK_GET();
                 ray_object *v = list_get((ray_object*)c->lb->consts, arg);
@@ -50,11 +84,11 @@ void eval(compiler *c) {
                 ray_object* v = list_get((ray_object *)c->lb->consts, arg);
                 ray_object *val = map_get((ray_object *)c->lb->locals, v);
                 if(val == NULL) {
-#ifdef PARSE_DEBUG
-                    printf("\n");
-#endif
                     QUIT_VM("Undefined variable %s\n", STRING_OBJ_AS_STRING(v));
                 }
+#ifdef PARSE_DEBUG
+                R_DEBUG("\b\b(%s)   ", STRING_OBJ_AS_STRING(OBJ_STR(val)));
+#endif
                 STACK_PUSH(val);
                 ++i;
             }
@@ -189,11 +223,22 @@ void eval(compiler *c) {
             }
         }
     }
+        assert(stack_pos == 1);
+        ret = STACK_POP();
+        compiler_pop_logic_block(c);
+        if(c->lb != NULL) {
+            stack_pos = c->lb->stack_pos;
+            stack = c->lb->stack;
+            i = c->lb->pc;
+            b = c->lb->eval_block;
+            len = b->code_len;
+            STACK_PUSH(ret);
+        }
+    }
+    c->lb = lb_save;
 
-    assert(stack_pos == 1);
-    ray_object *ret = STACK_POP();
 #ifdef VM_DEBUG
-    printf("\n");
+    R_DEBUG("\n");
 #endif
     printf("Execute result: %s\n", STRING_OBJ_AS_STRING(OBJ_STR(ret)));
 

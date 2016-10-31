@@ -5,18 +5,60 @@
 #include <vm.h>
 #include <visitor.h>
 #include <rayscript.tab.h>
+#include <function_object.h>
 #define HANDLE_BIN_OP(op) \
     case OP_TYPE_##op:\
-        visit_exp(c, op1);\
-        visit_exp(c, op2);\
+        visit_exp(c, n->l);\
+        visit_exp(c, n->r);\
         ADD_OP(c, OP_##op);\
         break
+
+int store_obj(compiler *c, ray_object* obj) {
+    long i = list_find((ray_object*)c->lb->consts, obj);
+    if(i < 0) {
+        i = list_append((ray_object *)c->lb->consts, obj);
+    }
+    return (int)i;
+}
+void visit_function_def(compiler* c, function_node* node) {
+#ifdef PARSE_DEBUG
+    R_DEBUG("-------------FUNC START------------\n");
+#endif
+    logic_block* lb = new_logic_block();
+    lb->head_block = lb->eval_block = lb->cb = new_code_block();
+    compiler_push_logic_block(c, lb);
+    visit_compound_statement(c, node->body);
+    compiler_pop_logic_block(c);
+    int size = LIST_SIZE(node->args->arg_list); 
+    for(int i = 0; i < size; ++i) {
+        ray_object* item = list_get(AS_OBJ(node->args->arg_list), i);
+        store_obj(c, item);
+    }
+#ifdef PARSE_DEBUG
+    R_DEBUG("--------------FUNC END-------------\n");
+#endif
+    function_object* f = new_function_object(node->args->arg_list, lb, size); 
+    int i = store_obj(c, AS_OBJ(f));
+    ADD_OP_ARG(c, PUSH, i);
+}
+
+void visit_call_function(compiler* c, call_function_node* node) {
+    list_object* l = node->args->arg_list;
+    int size = l->size;
+    for(int i = 0; i < size; ++i) {
+        visit_exp(c, (exp_node*)list_get(AS_OBJ(l), i));
+    }
+    int i = store_obj(c, AS_OBJ(node->name));
+    ADD_OP_ARG(c, LOAD_NAME, i);
+    ADD_OP_INVOKE(c, INVOKE, size);
+}
+
+
 void visit_exp(compiler *c, exp_node *node) {
     switch(node->type) {
     case EXP_TYPE_OP: {
-        exp_node *op1 = node->op1;
-        exp_node *op2 = node->op2;
-        switch(node->op3) {
+        calc_node* n = node->op;
+        switch(node->op->o) {
         HANDLE_BIN_OP(ADD);
         HANDLE_BIN_OP(SUB);
         HANDLE_BIN_OP(MUL);
@@ -28,23 +70,22 @@ void visit_exp(compiler *c, exp_node *node) {
         HANDLE_BIN_OP(NE);
         HANDLE_BIN_OP(EQ);
         default:
-            R_FATAL("Unknown operator type: %d", node->op3);
+            R_FATAL("Unknown operator type: %d", node->op->o);
         }
     }
     break;
     case EXP_TYPE_FACTOR:
-        visit_factor(c, node->op4);
+        visit_factor(c, node->factor);
+        break;
+    case EXP_TYPE_FUNCTION_DEF:
+        visit_function_def(c, node->function);
+        break;
+    case EXP_TYPE_CALL_FUNCTION:
+        visit_call_function(c, node->call);
         break;
     default:
         R_FATAL("exp_node type %d error!\n", node->type);
     }
-}
-int store_obj(compiler *c, ray_object* obj) {
-    long i = list_find((ray_object*)c->lb->consts, obj);
-    if(i < 0) {
-        i = list_append((ray_object *)c->lb->consts, obj);
-    }
-    return (int)i;
 }
 void visit_rname(compiler *c, ray_object *name) {
     int i = store_obj(c, name);

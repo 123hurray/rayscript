@@ -10,6 +10,7 @@ int yydebug = 1;
 #include <visitor.h>
 #include <opcode.h>
 #include <vm.h>
+#include <object.h>
 int is_interactive = 0;
 static statement_list_node* root;
 static statement_list_node* interactive_root;
@@ -22,6 +23,7 @@ int yyerror();
 %token INT_TOKEN FLOAT_TOKEN BOOL_TOKEN NIL_TOKEN
 %token OPERATOR OP CP ASSIGN_TOKEN IDENTIFIER 
 %token EOL 
+%token COMMA ARROW_TOKEN
 %token IF_TOKEN ELSE_TOKEN LB RB SC 
 %token PRINT_TOKEN
 %token TYPE_TERM TYPE_FACTOR
@@ -43,6 +45,10 @@ int yyerror();
     exp_node* en;
     factor_node* fn;
     for_from_to_statement_node* ffts;
+    arg_node* arn;
+    call_arg_node* can;
+    call_function_node* cfn;
+    function_node* fcn;
     bool_object* b;
     char* str;
     double fnum;
@@ -54,6 +60,10 @@ int yyerror();
 %type <csn> compound_statement;
 %type <psn> print_statement;
 %type <isn> if_statement;
+%type <arn> arg_list;
+%type <fcn> function_def;
+%type <cfn> call_function;
+%type <can> call_arg_list;
 %type <an> assign;
 %type <sn> statement;
 %type <en> exp;
@@ -150,7 +160,7 @@ statement: compound_statement {
     e->fftn = $1;
     $$ = e; 
 }
-
+;
 print_statement: PRINT_TOKEN exp {
     print_statement_node *e = MAKE_AST_NODE(print_statement_node);
     e->exp = $2;
@@ -169,51 +179,122 @@ if_statement: IF_TOKEN exp compound_statement {
     e->then = $3;
     e->els = $5;
     $$ = e;
-}; 
+};
 
+call_arg_list: {
+    call_arg_node* e = MAKE_AST_NODE(call_arg_node);
+    e->size = 0;
+    e->arg_list = new_list_object(1);
+    $$ = e;
+}
+| exp {
+    call_arg_node* e = MAKE_AST_NODE(call_arg_node);
+    e->size = 1;
+    e->arg_list = new_list_object(1);
+    list_append(AS_OBJ(e->arg_list), AS_OBJ($1));
+    $$ = e;
+}
+| call_arg_list COMMA exp {
+    call_arg_node* e = $1; 
+    ++(e->size);
+    list_append(AS_OBJ(e->arg_list), AS_OBJ($3));
+    $$ = e;
+}
+;
+
+call_function: IDENTIFIER OP call_arg_list CP {
+    call_function_node* e = MAKE_AST_NODE(call_function_node);
+    e->name = new_string_object($1);
+    e->args = $3;
+    $$ = e;
+}
+;
+
+
+
+arg_list: OP CP {
+    arg_node* e = MAKE_AST_NODE(arg_node);
+    e->arg_list = new_list_object(1);
+    $$ = e;
+}
+| IDENTIFIER {
+    arg_node* e = MAKE_AST_NODE(arg_node);
+    e->arg_list = new_list_object(1);
+    list_append(AS_OBJ(e->arg_list), AS_OBJ(new_string_object($1)));
+    $$ = e;
+}
+| arg_list IDENTIFIER {
+    arg_node* e = $1;
+    list_append(AS_OBJ(e->arg_list), AS_OBJ(new_string_object($2)));
+    $$ = $1;
+};
+
+function_def: arg_list ARROW_TOKEN compound_statement {
+    function_node* e = MAKE_AST_NODE(function_node);
+    e->args = $1;
+    e->body = $3;
+    $$ = e;
+}
 
 exp: factor { 
     exp_node *e = (exp_node*)malloc(sizeof(exp_node));
     e->type = EXP_TYPE_FACTOR;
-    e->op1 = NULL;
-    e->op2 = NULL; 
-    e->op3 = 0; 
-    e->op4= $1;
+    e->factor = $1;
     $$ = e;
 } 
 
 | exp EQUALITY_TOKEN exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
     e->type = EXP_TYPE_OP;
-    e->op1 = $1;
-    e->op2 = $3; 
-    e->op3 = $2;
+    calc_node *cn = MAKE_AST_NODE(calc_node);
+    cn->l = $1;
+    cn->r = $3;
+    cn->o = $2;
+    e->op = cn;
     $$ = e; 
 }
 | exp RELATIONAL_TOKEN exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
     e->type = EXP_TYPE_OP;
-    e->op1 = $1;
-    e->op2 = $3; 
-    e->op3 = $2;
+    calc_node *cn = MAKE_AST_NODE(calc_node);
+    cn->l = $1;
+    cn->r = $3;
+    cn->o = $2;
+    e->op = cn;
     $$ = e; 
 }
  | exp OPERATOR_1 exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
     e->type = EXP_TYPE_OP;
-    e->op1 = $1;
-    e->op2 = $3; 
-    e->op3 = $2;
+    calc_node *cn = MAKE_AST_NODE(calc_node);
+    cn->l = $1;
+    cn->r = $3;
+    cn->o = $2;
+    e->op = cn;
     $$ = e; 
 } 
  | exp OPERATOR_2 exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
     e->type = EXP_TYPE_OP;
-    e->op1 = $1;
-    e->op2 = $3; 
-    e->op3 = $2;
+    calc_node *cn = MAKE_AST_NODE(calc_node);
+    cn->l = $1;
+    cn->r = $3;
+    cn->o = $2;
+    e->op = cn;
     $$ = e; 
-}; 
+} 
+| function_def {
+    exp_node *e = MAKE_AST_NODE(exp_node);
+    e->type = EXP_TYPE_FUNCTION_DEF;
+    e->function = $1;
+    $$ = e; 
+}
+|call_function {
+    exp_node *e = MAKE_AST_NODE(exp_node);
+    e->type = EXP_TYPE_CALL_FUNCTION;
+    e->call = $1;
+    $$ = e; 
+};
 factor : INT_TOKEN {
     factor_node *f = MAKE_AST_NODE(factor_node);
     f->type = FACTOR_TYPE_INT;
@@ -249,7 +330,9 @@ factor : INT_TOKEN {
     e->type = FACTOR_TYPE_NIL;
     e->val = (ray_object*)nil;
     $$ = e;
-};
+}
+;
+
 
 
 for_from_to_statement: FOR_TOKEN IDENTIFIER FROM_TOKEN statement TO_TOKEN statement STEP_TOKEN statement compound_statement {
@@ -270,6 +353,7 @@ assign: IDENTIFIER ASSIGN_TOKEN statement {
 }
 ;
 %%
+int line_status;
 extern int yychar;
 extern FILE* yyin;
 extern void yyrestart(FILE*);
@@ -277,11 +361,11 @@ void interactive_mode() {
     compiler *c = new_compiler();
     int is_last_eol = 1;
     while(1) {
-        printf(">>>");
         int status;
         yypstate *ps = yypstate_new ();
         yychar = INTERP_START;
         status = yypush_parse(ps);
+        line_status = 0;
         do {
             yychar = yylex ();
             if(yychar == 0) {
@@ -289,10 +373,10 @@ void interactive_mode() {
             }
             if(yychar == EOL) {
                 if(is_last_eol == 1) {
-                    printf(">>>");
+                    line_status = 0;
                     continue;
                 } else {
-                    printf("...");
+                    line_status = 1;
                     is_last_eol = 1;
                 }
             } else {

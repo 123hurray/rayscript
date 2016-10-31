@@ -9,18 +9,36 @@
 // Defines
 
 #ifdef PARSE_DEBUG
-#define ADD_OP(c, o) do{R_DEBUG(#o"\n");add_op((c), (o));}while(0)
+#define ADD_OP(c, o) do{\
+    R_DEBUG("%p:%-3d   "#o"\n", (c)->lb->cb, (c)->lb->cb->code_len);\
+    add_op((c), (o));\
+}while(0)
+
+
 
 #define ADD_OP_ARG(c, o, a) do{\
-    R_DEBUG("%-16s%3d (%s)\n", #o, (a), STRING_OBJ_AS_STRING(OBJ_STR(list_get(AS_OBJ((c)->lb->consts), (a)))));\
+    R_DEBUG("%p:%-3d   %-16s%-3d (%s)\n", (c)->lb->cb, (c)->lb->cb->code_len, #o, (a), STRING_OBJ_AS_STRING(OBJ_STR(list_get(AS_OBJ((c)->lb->consts), (a)))));\
     add_op_arg((c), (o), (a));\
 }while(0)
-#define ADD_OP_JMP(c, o, t) do{R_DEBUG(#o"\n");add_op_jmp((c), (o), (t));}while(0)
+
+
+#define ADD_OP_JMP(c, o, t) do{\
+    R_DEBUG("%p:%-3d   %-16s%p\n", (c)->lb->cb, (c)->lb->cb->code_len, #o, (t));\
+    add_op_jmp((c), (o), (t));\
+}while(0)
+
+
+#define ADD_OP_INVOKE(c, o, a) do{\
+    R_DEBUG("%p:%-3d   %-16s%-3d\n", (c)->lb->cb, (c)->lb->cb->code_len, #o, (a));\
+    add_op_arg((c), (o), (a));\
+}while(0)
+
 
 #else
 #define ADD_OP(c, o) do{add_op((c), (o));}while(0)
 #define ADD_OP_ARG(c, o, a) do{add_op_arg((c), (o), (a));}while(0)
 #define ADD_OP_JMP(c, o, t) do{add_op_jmp((c), (o), (t));}while(0)
+#define ADD_OP_INVOKE(c, o, a) do{add_op_arg((c), (o), (a));}while(0)
 #endif
 
 

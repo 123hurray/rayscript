@@ -2,8 +2,8 @@
 #define VM_H
 
 #include <opcode.h>
-#include <vm.h>
-
+typedef struct _logic_block logic_block;
+#include <object.h>
 
 
 // constants
@@ -28,6 +28,10 @@ case op:\
 DEBUG_OP_ARG(#op);
 
 
+#define HANDLE_INVOKE(op) \
+HANDLE_##op: \
+case op:\
+DEBUG_OP(#op);
 
 #ifdef VM_DEBUG
 
@@ -87,17 +91,23 @@ struct _code_block {
     struct _code_block *next;
 };
 
-typedef struct {
+struct _logic_block {
     code_block *head_block;
     code_block *eval_block;
     code_block *cb;
     list_object *consts;
     map_object *globals;
     map_object *locals;
-} logic_block;
+    logic_block *next;
+    logic_block *prev;
+    ray_object** stack;
+    int stack_pos;
+    int pc;
+};
 
 typedef struct {
     logic_block *lb;
+    logic_block *head_lb;
 } compiler;
 
 // Functions
@@ -107,6 +117,11 @@ void continue_compiler(compiler *);
 logic_block *new_logic_block();
 compiler* new_compiler();
 code_block * new_code_block();
+
+void compiler_push_logic_block(compiler*, logic_block*);
+logic_block* compiler_pop_logic_block(compiler*);
+
+
 
 void use_code_block_next(compiler *c, code_block *nb);
 void add_op(compiler *, unsigned char);

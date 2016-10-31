@@ -11,6 +11,7 @@ AM_INIT_AUTOMAKE
 AC_PROG_CC
 # Checks for libraries.
 AC_HEADER_STDC
+PKG_CHECK_MODULES(LIBEDIT, libedit)
 
 # Checks for header files.
 

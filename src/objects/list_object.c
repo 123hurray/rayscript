@@ -26,22 +26,44 @@ ray_object * list_get(ray_object* self, long index) {
     }
     return l->table[index];
 }
-long list_append(ray_object *self, ray_object *item) {
-    list_object* l = AS_LIST(self);
+
+void list_ensure_size(list_object* l) {
     if(l->size >= l->allocated * LIST_SCALE_FACTOR) {
        long new_size = l->size * LIST_SCALE_FACTOR; 
        l->allocated = new_size;
        l->table = R_REALLOC(l->table, new_size * sizeof(ray_object *));
     }
+}
+
+long list_append(ray_object *self, ray_object *item) {
+    list_object* l = AS_LIST(self);
+    list_ensure_size(l);
     l->table[l->size] = item;
     return (l->size)++;
+}
+
+
+
+long list_insert(ray_object *self, long index, ray_object* item) {
+    list_object* l = AS_LIST(self);
+    if(index > l->size) {
+        return 0;
+    }
+    if(index == l->size) {
+        return list_append(self, item);
+    }
+    list_ensure_size(l);
+    memmove(&(l->table[index+1]), &(l->table[index]), sizeof(ray_object*) * (l->size - index));
+    l->table[index] = item;
+    ++(l->size);
+    return 1;
 }
 long list_remove(ray_object *self, long index) {
     list_object* l = AS_LIST(self);
     if(index >= l->size) {
         return 0;
     }
-    memcpy(&(l->table[index]), &(l->table[index+1]), l->size - index - 1);
+    memcpy(&(l->table[index]), &(l->table[index+1]), sizeof(ray_object*) * (l->size - index - 1));
     --(l->size);
     return 1;
 }
