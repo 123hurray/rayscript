@@ -9,30 +9,31 @@ void init_bool_object() {
 
 string_object* bool_str(ray_object* self) {
     if(OBJ_IS_TRUE(self)) {
+        INC_REF(true_str);
         return true_str;
     } else {
+        INC_REF(false_str);
         return false_str;
     }
 }
 
 type_object bool_type_object = {
-    &base_type_object,
+    INIT_HEADER(&base_type_object),
     "bool",
     default_hash,
     default_equals,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    DEFAULT_BIN_OPS,
     bool_str,
+    NULL, 
+    default_destruct,
 };
 
 bool_object bool_true = {
-    &bool_type_object,
+    INIT_HEADER(&bool_type_object),
 };
 
 bool_object bool_false = {
-    &bool_type_object,
+    INIT_HEADER(&bool_type_object),
 };
 
 bool_object *p_bool_true = &bool_true;

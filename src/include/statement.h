@@ -2,7 +2,9 @@
 #define STATEMENT_H
 #include <opcode.h>
 #include <object.h>
-#define AST_HEADER 
+#define AST_HEADER OBJ_HEADER
+
+
 typedef enum ast_type_enum {EXP, TERM, FACTOR, NUM, ID, ASSIGNMENT, TYPE_PRINT, TYPE_IF, STATEMENT, STATEMENT_LIST, COMPOUND_STATEMENT} ast_type_enum;
 typedef struct {
     AST_HEADER;
@@ -69,7 +71,7 @@ struct _compound_statement_node {
 struct _statement_node {
     AST_HEADER;
     statement_node *next;
-    statement_type type;
+    statement_type stype;
     union {
         compound_statement_node * csn;
         exp_node* en;
@@ -100,28 +102,32 @@ struct _if_statement_node {
 
 
 struct _arg_node {
+    AST_HEADER;
     int size;
     list_object* arg_list;
 };
 
 struct _function_node {
+    AST_HEADER;
     arg_node* args;
     compound_statement_node* body; 
 };
 
 struct _call_function_node {
+    AST_HEADER;
     string_object* name;
     call_arg_node* args; 
 };
 
 struct _calc_node {
+    AST_HEADER;
     exp_node* l;
     exp_node* r;
     operator_type o;
 };
 struct _exp_node {
     AST_HEADER;
-    exp_type type;
+    exp_type etype;
     union {
         calc_node *op;
         factor_node* factor;
@@ -131,7 +137,7 @@ struct _exp_node {
 };
 struct _factor_node {
     AST_HEADER;
-    factor_type type;
+    factor_type ftype;
     union {
         ray_object* val;
         exp_node* exp;
@@ -139,13 +145,13 @@ struct _factor_node {
 };
 struct _assign_node {
     AST_HEADER;
-    char * lval;
+    string_object * lval;
     statement_node * rval;
 };
 
 struct _for_from_to_statement_node {
     AST_HEADER;
-    char* i;
+    string_object* name;
     statement_node* from;
     statement_node* to;
     statement_node* step;
@@ -154,7 +160,12 @@ struct _for_from_to_statement_node {
 
 
 
-#define MAKE_AST_NODE(type) ((type *)malloc(sizeof(type)))
+#define MAKE_AST_NODE(type) ((type*)init_ast_node((void *)R_MALLOC(type)));
+
+static inline void * init_ast_node(void *o) {
+    INIT_OBJ_HEADER(AS_OBJ(o), ast_type_object);
+    return o;
+}
 
 
 

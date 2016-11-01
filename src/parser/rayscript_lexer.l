@@ -1,5 +1,6 @@
 %option noyywrap
 %option yylineno
+%option noyyalloc noyyfree
 %{
 #include <config.h>
 #include <string.h>
@@ -7,6 +8,10 @@
 #include <rayscript.tab.h>
 #include <object.h>
 #include <allocator.h>
+
+#define yyalloc(s) _R_MALLOC(s)
+#define yyfree(p) _R_FREE(p)
+    
 #ifdef DEBUG_LEXER
 
 YYSTYPE yylval;
@@ -76,10 +81,12 @@ static int mygetinput(char *buf, int max_size) {
 
 %%
 "true"                               { 
+    INC_REF(p_bool_true);
     yylval.b = p_bool_true;    
     return BOOL_TOKEN;
 }
 "false"                              {
+    INC_REF(p_bool_false);
     yylval.b = p_bool_false;
     return BOOL_TOKEN;
 }
@@ -119,7 +126,7 @@ static int mygetinput(char *buf, int max_size) {
 [ t]                                 { /* ignore */   } 
 
 ([a-zA-Z_][a-zA-Z0-9]*)                      {
-    char *str = R_MALLOC_N(char, strlen(yytext));
+    char *str = R_MALLOC_N(char, strlen(yytext) + 1);
     strcpy(str, yytext);
     yylval.str = str; 
     return IDENTIFIER;

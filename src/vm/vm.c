@@ -24,6 +24,9 @@
                 ray_object *op2 = STACK_POP();\
                 ray_object* op1 = STACK_POP();\
                 ray_object* val = (ray_object*)OBJ_BOOL_FROM_INT(OBJ_##op(op1, op2));\
+                DEC_REF(op1);\
+                DEC_REF(op2);\
+                INC_REF(val);\
                 STACK_PUSH(val);\
                 ++i;\
             }\
@@ -32,7 +35,8 @@
 
 
 void eval(compiler *c) {
-    ray_object* ret;
+    ray_object* ret = NULL;
+    INC_REF(c->lb);
     logic_block* lb_save = c->lb;
     code_block * b = c->lb->eval_block;
     ray_object **stack = c->lb->stack;
@@ -55,9 +59,12 @@ void eval(compiler *c) {
                 for(int i = 0; i < arg; ++i) {
                     ray_object* item = STACK_POP();
                     list_prepend(AS_OBJ(l), item);
+                    DEC_REF(item);
                 }
                 ++i;
                 logic_block* new_lb = OBJ_INVOKE(op1, l);
+                DEC_REF(op1);
+                DEC_REF(l);
 
                 // store runtime
                 
@@ -65,6 +72,7 @@ void eval(compiler *c) {
                 c->lb->pc = i;
 
                 compiler_push_logic_block(c, new_lb);
+                DEC_REF(new_lb);
 
                 b = c->lb->eval_block;
                 stack = c->lb->stack;
@@ -84,17 +92,24 @@ void eval(compiler *c) {
                 ray_object* v = list_get((ray_object *)c->lb->consts, arg);
                 ray_object *val = map_get((ray_object *)c->lb->locals, v);
                 if(val == NULL) {
-                    QUIT_VM("Undefined variable %s\n", STRING_OBJ_AS_STRING(v));
+                    if(c->lb->globals != c->lb->locals) {
+                        val = map_get((ray_object *)c->lb->globals, v);
+                    }
+                    if(val == NULL) {
+                        QUIT_VM("Undefined variable %s\n", STRING_OBJ_AS_STRING(v));
+                    }
                 }
 #ifdef PARSE_DEBUG
                 R_DEBUG("\b\b(%s)   ", STRING_OBJ_AS_STRING(OBJ_STR(val)));
 #endif
+                INC_REF(val);
                 STACK_PUSH(val);
                 ++i;
             }
             break;
             HANDLE_ARG(PUSH) {
                 ray_object* v = list_get((ray_object *)c->lb->consts, arg);
+                INC_REF(v);
                 STACK_PUSH(v);
                 ++i;
             }
@@ -103,10 +118,13 @@ void eval(compiler *c) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
                 ray_object *v = OBJ_ADD(op1, op2);
+                DEC_REF(op1);
+                DEC_REF(op2);
                 if(!OBJ_IS_NIL(v)) {
                     STACK_PUSH((ray_object *)v);
                     ++i;
                 } else {
+                    DEC_REF(v);
                     QUIT_VM("Unsupport %s add %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
             }
@@ -115,10 +133,13 @@ void eval(compiler *c) {
                 ray_object *op2 = STACK_POP();
                 ray_object *op1 = STACK_POP();
                 ray_object *v = OBJ_SUB(op1, op2);
+                DEC_REF(op1);
+                DEC_REF(op2);
                 if(!OBJ_IS_NIL(v)) {
                     STACK_PUSH((ray_object *)v);
                     ++i;
                 } else {
+                    DEC_REF(v);
                     QUIT_VM("Unsupport type %s sub type %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
             }
@@ -127,10 +148,13 @@ void eval(compiler *c) {
                 ray_object *op1 = STACK_POP();
                 ray_object *op2 = STACK_POP();
                 ray_object *v = OBJ_MUL(op1, op2);
+                DEC_REF(op1);
+                DEC_REF(op2);
                 if(!OBJ_IS_NIL(v)) {
                     STACK_PUSH((ray_object *)v);
                     ++i;
                 } else {
+                    DEC_REF(v);
                     QUIT_VM("Unsupport type %s mul type %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
             }
@@ -139,27 +163,35 @@ void eval(compiler *c) {
                 ray_object *op2 = STACK_POP();
                 ray_object *op1 = STACK_POP();
                 ray_object *v = OBJ_DIV(op1, op2);
+                DEC_REF(op1);
+                DEC_REF(op2);
                 if(!OBJ_IS_NIL(v)) {
                     STACK_PUSH((ray_object *)v);
                     ++i;
                 } else {
+                    DEC_REF(v);
                     QUIT_VM("Unsupport type %s div type %s\n", OBJ_GET_TYPE_NAME(op1), OBJ_GET_TYPE_NAME(op2));
                 }
             }
             break;
             HANDLE(PRINT) {
                 ray_object *v = STACK_POP();
-                printf("%s\n", STRING_OBJ_AS_STRING(OBJ_STR(v)));
+                string_object* str = OBJ_STR(v);
+                printf("%s\n", STRING_OBJ_AS_STRING(str));
+                DEC_REF(str);
+                DEC_REF(v);
                 ++i;
             }
             break;
             HANDLE(POP) {
-               STACK_POP();
+               ray_object* v = STACK_POP();
+               DEC_REF(v);
                ++i;
             }
             break;
             HANDLE(DUP) {
                 ray_object *op = STACK_GET();
+                INC_REF(op);
                 STACK_PUSH(op);
                 ++i;
             }
@@ -188,7 +220,9 @@ void eval(compiler *c) {
                         i = 0;
                         len = b->code_len;
                     }
+                    DEC_REF(op);
                 } else {
+                    DEC_REF(op);
                     QUIT_VM("type error!\n");
                 }
             }
@@ -204,7 +238,9 @@ void eval(compiler *c) {
                         i = 0;
                         len = b->code_len;
                     }
+                    DEC_REF(op);
                 } else {
+                    DEC_REF(op);
                     QUIT_VM("type error!\n");
                 }
             }
@@ -224,14 +260,17 @@ void eval(compiler *c) {
         }
     }
         assert(stack_pos == 1);
+        DEC_REF(ret);
         ret = STACK_POP();
-        compiler_pop_logic_block(c);
+        logic_block *old = compiler_pop_logic_block(c);
+        DEC_REF(old);
         if(c->lb != NULL) {
             stack_pos = c->lb->stack_pos;
             stack = c->lb->stack;
             i = c->lb->pc;
             b = c->lb->eval_block;
             len = b->code_len;
+            INC_REF(ret);
             STACK_PUSH(ret);
         }
     }
@@ -240,7 +279,10 @@ void eval(compiler *c) {
 #ifdef VM_DEBUG
     R_DEBUG("\n");
 #endif
-    printf("Execute result: %s\n", STRING_OBJ_AS_STRING(OBJ_STR(ret)));
+    string_object* str = OBJ_STR(ret);
+    printf("Execute result: %s\n", STRING_OBJ_AS_STRING(str));
+    DEC_REF(str);
+    DEC_REF(ret);
 
 clear:
     ;

@@ -4,25 +4,25 @@
 string_object* nil_str_v;
 
 string_object* nil_str(ray_object* ignore) {
+    INC_REF(nil_str_v);
     return nil_str_v;
 }
 
 type_object nil_type_object = {
-    &base_type_object,
+    INIT_HEADER(&base_type_object),
     "nil",
     default_hash,
     default_equals,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    nil_str
+    DEFAULT_BIN_OPS,
+    nil_str,
+    NULL, 
+    default_destruct,
 };
 
 
 nil_object *nil;
 static nil_object _nil = {
-    &nil_type_object,
+    INIT_HEADER(&nil_type_object),
 };
 
 void init_nil_object() {

@@ -8,7 +8,7 @@ typedef struct _logic_block logic_block;
 
 // constants
 
-#define STACK_SIZE 100
+#define STACK_SIZE 10
 #define DEFAULT_CODE_SIZE 4
 
 
@@ -92,6 +92,7 @@ struct _code_block {
 };
 
 struct _logic_block {
+    OBJ_HEADER;
     code_block *head_block;
     code_block *eval_block;
     code_block *cb;
@@ -105,6 +106,11 @@ struct _logic_block {
     int pc;
 };
 
+typedef struct _c_cache {
+    struct _c_cache* next;
+} c_cache;
+
+
 typedef struct {
     logic_block *lb;
     logic_block *head_lb;
@@ -114,13 +120,16 @@ typedef struct {
 
 void eval(compiler *);
 void continue_compiler(compiler *);
-logic_block *new_logic_block();
+logic_block *new_logic_block(map_object*, map_object*);
+void destruct_logic_block(ray_object*);
 compiler* new_compiler();
+void destruct_compiler(compiler*);
 code_block * new_code_block();
 
 void compiler_push_logic_block(compiler*, logic_block*);
 logic_block* compiler_pop_logic_block(compiler*);
 
+logic_block *new_logic_block_from_exists(logic_block*, map_object*);
 
 
 void use_code_block_next(compiler *c, code_block *nb);

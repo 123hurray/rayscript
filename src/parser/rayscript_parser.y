@@ -16,6 +16,8 @@ static statement_list_node* root;
 static statement_list_node* interactive_root;
 int yylex();
 int yyerror();
+#define YYMALLOC _R_MALLOC
+#define YYFREE _R_FREE
 %}
 %define api.push-pull both
  /* declare tokens */
@@ -120,42 +122,42 @@ compound_statement: LB eols RB  {
 ;
 statement: compound_statement {
     statement_node* e = MAKE_AST_NODE(statement_node);
-    e->type = STATEMENT_TYPE_COMPOUND;
+    e->stype = STATEMENT_TYPE_COMPOUND;
     e->next = NULL;
     e->csn = $1;
     $$ = e; 
 }
 | exp {
     statement_node* e = MAKE_AST_NODE(statement_node);
-    e->type = STATEMENT_TYPE_EXP;
+    e->stype = STATEMENT_TYPE_EXP;
     e->next = NULL;
     e->en = $1;
     $$ = e; 
 } 
 | assign {
     statement_node* e = MAKE_AST_NODE(statement_node);
-    e->type = STATEMENT_TYPE_ASSIGN;
+    e->stype = STATEMENT_TYPE_ASSIGN;
     e->next = NULL;
     e->an = $1;
     $$ = e; 
 } 
 | if_statement {
     statement_node* e = MAKE_AST_NODE(statement_node);
-    e->type = STATEMENT_TYPE_IF;
+    e->stype = STATEMENT_TYPE_IF;
     e->next = NULL;
     e->isn = $1;
     $$ = e; 
 }
 | print_statement {
     statement_node* e = MAKE_AST_NODE(statement_node);
-    e->type = STATEMENT_TYPE_PRINT;
+    e->stype = STATEMENT_TYPE_PRINT;
     e->next = NULL;
     e->psn = $1;
     $$ = e; 
 }
 | for_from_to_statement {
     statement_node* e = MAKE_AST_NODE(statement_node);
-    e->type = STATEMENT_TYPE_FOR_FROM_TO;
+    e->stype = STATEMENT_TYPE_FOR_FROM_TO;
     e->next = NULL;
     e->fftn = $1;
     $$ = e; 
@@ -205,6 +207,7 @@ call_arg_list: {
 call_function: IDENTIFIER OP call_arg_list CP {
     call_function_node* e = MAKE_AST_NODE(call_function_node);
     e->name = new_string_object($1);
+    R_FREE($1);
     e->args = $3;
     $$ = e;
 }
@@ -221,11 +224,13 @@ arg_list: OP CP {
     arg_node* e = MAKE_AST_NODE(arg_node);
     e->arg_list = new_list_object(1);
     list_append(AS_OBJ(e->arg_list), AS_OBJ(new_string_object($1)));
+    R_FREE($1);
     $$ = e;
 }
 | arg_list IDENTIFIER {
     arg_node* e = $1;
     list_append(AS_OBJ(e->arg_list), AS_OBJ(new_string_object($2)));
+    R_FREE($2);
     $$ = $1;
 };
 
@@ -237,15 +242,15 @@ function_def: arg_list ARROW_TOKEN compound_statement {
 }
 
 exp: factor { 
-    exp_node *e = (exp_node*)malloc(sizeof(exp_node));
-    e->type = EXP_TYPE_FACTOR;
+    exp_node *e = MAKE_AST_NODE(exp_node);
+    e->etype = EXP_TYPE_FACTOR;
     e->factor = $1;
     $$ = e;
 } 
 
 | exp EQUALITY_TOKEN exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
-    e->type = EXP_TYPE_OP;
+    e->etype = EXP_TYPE_OP;
     calc_node *cn = MAKE_AST_NODE(calc_node);
     cn->l = $1;
     cn->r = $3;
@@ -255,7 +260,7 @@ exp: factor {
 }
 | exp RELATIONAL_TOKEN exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
-    e->type = EXP_TYPE_OP;
+    e->etype = EXP_TYPE_OP;
     calc_node *cn = MAKE_AST_NODE(calc_node);
     cn->l = $1;
     cn->r = $3;
@@ -265,7 +270,7 @@ exp: factor {
 }
  | exp OPERATOR_1 exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
-    e->type = EXP_TYPE_OP;
+    e->etype = EXP_TYPE_OP;
     calc_node *cn = MAKE_AST_NODE(calc_node);
     cn->l = $1;
     cn->r = $3;
@@ -275,7 +280,7 @@ exp: factor {
 } 
  | exp OPERATOR_2 exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
-    e->type = EXP_TYPE_OP;
+    e->etype = EXP_TYPE_OP;
     calc_node *cn = MAKE_AST_NODE(calc_node);
     cn->l = $1;
     cn->r = $3;
@@ -285,49 +290,50 @@ exp: factor {
 } 
 | function_def {
     exp_node *e = MAKE_AST_NODE(exp_node);
-    e->type = EXP_TYPE_FUNCTION_DEF;
+    e->etype = EXP_TYPE_FUNCTION_DEF;
     e->function = $1;
     $$ = e; 
 }
 |call_function {
     exp_node *e = MAKE_AST_NODE(exp_node);
-    e->type = EXP_TYPE_CALL_FUNCTION;
+    e->etype = EXP_TYPE_CALL_FUNCTION;
     e->call = $1;
     $$ = e; 
 };
 factor : INT_TOKEN {
     factor_node *f = MAKE_AST_NODE(factor_node);
-    f->type = FACTOR_TYPE_INT;
+    f->ftype = FACTOR_TYPE_INT;
     f->val = (ray_object*)new_number_object_from_long($1);
     $$ = f;
 }
 | FLOAT_TOKEN {
     factor_node *f = MAKE_AST_NODE(factor_node);
-    f->type = FACTOR_TYPE_FLOAT;
+    f->ftype = FACTOR_TYPE_FLOAT;
     f->val = (ray_object*)new_number_object_from_double($1);
     $$ = f;
 }
 | IDENTIFIER {
     factor_node *f = MAKE_AST_NODE(factor_node);
-    f->type = FACTOR_TYPE_IDENTIFIER;
+    f->ftype = FACTOR_TYPE_IDENTIFIER;
     f->val = (ray_object*)new_string_object($1);
+    R_FREE($1);
     $$ = f;
 }
 | OP exp CP   {
     factor_node* e = MAKE_AST_NODE(factor_node);
-    e->type = FACTOR_TYPE_EXP;
+    e->ftype = FACTOR_TYPE_EXP;
     e->exp = $2;
     $$ = e;
 } 
 | BOOL_TOKEN {
     factor_node* e = MAKE_AST_NODE(factor_node);
-    e->type = FACTOR_TYPE_BOOL;
+    e->ftype = FACTOR_TYPE_BOOL;
     e->val = (ray_object*)$1;
     $$ = e;
 }
 | NIL_TOKEN {
     factor_node* e = MAKE_AST_NODE(factor_node);
-    e->type = FACTOR_TYPE_NIL;
+    e->ftype = FACTOR_TYPE_NIL;
     e->val = (ray_object*)nil;
     $$ = e;
 }
@@ -337,7 +343,8 @@ factor : INT_TOKEN {
 
 for_from_to_statement: FOR_TOKEN IDENTIFIER FROM_TOKEN statement TO_TOKEN statement STEP_TOKEN statement compound_statement {
     for_from_to_statement_node *e = MAKE_AST_NODE(for_from_to_statement_node);
-    e->i = $2;
+    e->name = new_string_object($2);
+    R_FREE($2);
     e->from = $4;
     e->to = $6;
     e->step = $8;
@@ -347,7 +354,8 @@ for_from_to_statement: FOR_TOKEN IDENTIFIER FROM_TOKEN statement TO_TOKEN statem
 
 assign: IDENTIFIER ASSIGN_TOKEN statement {
     assign_node* e = MAKE_AST_NODE(assign_node);
-    e->lval = $1;
+    e->lval = new_string_object($1);
+    R_FREE($1);
     e->rval = $3;
     $$ = e;
 }
@@ -426,6 +434,7 @@ void interactive_mode() {
         status = 0;
         interactive_root = NULL;
     }
+    destruct_compiler(c);
 }
 void normal_mode() {
     yyparse();
@@ -438,6 +447,7 @@ void normal_mode() {
 #endif
         eval(c);
     }
+    destruct_compiler(c);
 }
 int main(int argc, char **argv) {
     if(argc == 2) {

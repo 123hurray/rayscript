@@ -1,8 +1,12 @@
 #ifndef OBJECT_H
 #define OBJECT_H
+#include <stdio.h>
 #include <stdlib.h>
 #include <all_objects.h>
 #include <globals.h>
+#include <allocator.h>
+
+
 
 /*
  *
@@ -45,10 +49,14 @@
 #define CMP_UNSUPPORTED 0
 
 #define OBJ_HEADER \
-    type_object* type;
+    type_object* type;\
+    int refcnt;
 #define OBJ_HEADER_WITH_SIZE \
     OBJ_HEADER;\
     int size;
+
+#define INIT_HEADER(type) type, 1
+
 
 #include <type_object.h>
 
@@ -56,6 +64,38 @@ struct _ray_object {
     OBJ_HEADER;
 };
 
+#define ENABLE_GC
+
+#ifdef GC_DEBUG
+#define R_DEBUG_GC(v, ...) R_DEBUG(v, ##__VA_ARGS__)
+#else
+#define R_DEBUG_GC(v, ...)
+#endif
+
+
+#ifdef ENABLE_GC
+
+#define INC_REF(o) do {\
+    if(o != NULL) {\
+        (o)->refcnt++;\
+        R_DEBUG_GC("INC_REF:%s %p %d in %s:%d\n", OBJ_GET_TYPE_NAME((o)), (o), (o)->refcnt, __FILE__,__LINE__);\
+    }\
+}while(0)
+
+#define DEC_REF(o) do {\
+    if((o) != NULL) {\
+        (o)->refcnt--; \
+        R_DEBUG_GC("DEC_REF:%s %p %d in %s:%d\n", OBJ_GET_TYPE_NAME(o), (o), (o)->refcnt, __FILE__,__LINE__);\
+        /*assert((o)->refcnt >=0);*/\
+        if((o)->refcnt == 0) {\
+            (o)->type->__destruct(AS_OBJ(o));\
+        }\
+    }\
+}while(0)
+#else
+#define INC_REF(o) 
+#define DEC_REF(o)
+#endif
 
 #include <nil_object.h>
 #include <bool_object.h>
@@ -64,6 +104,8 @@ struct _ray_object {
 #include <map_object.h>
 #include <list_object.h>
 #include <function_object.h>
+#include <assert.h>
+extern type_object ast_type_object;
 
 void init_objects();
 
@@ -75,16 +117,24 @@ int default_equals(ray_object *, ray_object *);
 string_object* default_str();
 
 
+ray_object* default_bin_op(ray_object*, ray_object*);
+void default_destruct(ray_object*);
 
+#define DEFAULT_BIN_OPS \
+    default_bin_op,\
+    default_bin_op,\
+    default_bin_op,\
+    default_bin_op
 
 
 
 #define AS_OBJ(o) (((ray_object *)(o)))
 
 
-#define NEW_OBJ(type) ((type*)malloc(sizeof(type)))
-#define INIT_OBJ_HEADER(obj, type_object, s) do {\
-    (obj)->type = &(type_object); \
+#define NEW_OBJ(type) (R_MALLOC(type))
+#define INIT_OBJ_HEADER(obj, type_object) do {\
+    (obj)->type = &(type_object);\
+    (obj)->refcnt = 1;\
 } while(0)
         
 #define INIT_OBJ_VAR_HEADER(obj, type_object, s) do {\

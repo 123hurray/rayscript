@@ -1,4 +1,5 @@
 #include <string_object.h>
+#include <allocator.h>
 #include <string.h>
 
 long string_object_hash(ray_object *self) {
@@ -39,26 +40,31 @@ int string_object_equals(ray_object * self, ray_object * other) {
 }
 
 string_object* string_str(ray_object* self) {
-    return (string_object*)self;
+    return new_string_object(STRING_OBJ_AS_STRING(self));
 }
 
+void destruct_string_object(ray_object* o) {
+    string_object* self = (string_object*)o;
+    R_FREE(self->val);
+    R_FREE(self);
+}
 type_object string_type_object = {
-    &base_type_object,
+    INIT_HEADER(&base_type_object),
     "string",
     string_object_hash,
     string_object_equals,
+    DEFAULT_BIN_OPS,
+    string_str,
     NULL,
-    NULL,
-    NULL,
-    NULL,
-    string_str
+    destruct_string_object
 };
 string_object *new_string_object(char * str) {
-    string_object *str_obj = (string_object *)malloc(sizeof(string_object));
-    str_obj->type = &string_type_object;
-    str_obj->size = strlen(str);
-    str_obj->val = (char *)malloc(str_obj->size);
+    string_object *str_obj = NEW_OBJ(string_object);
+    INIT_OBJ_HEADER(str_obj, string_type_object);
+    str_obj->size = strlen(str) + 1;
+    str_obj->val = R_MALLOC_N(char, str_obj->size);
     strcpy(str_obj->val, str);
     str_obj->is_hash_cached = 0;
     return str_obj;
 }
+

@@ -28,6 +28,7 @@ struct _map_object {
 
 
 
+void destruct_map_object(ray_object*);
 map_object *new_map_object(int size);
 ray_object * map_get(ray_object* self, ray_object *key);
 void map_put(ray_object *self, ray_object *key, ray_object *val);

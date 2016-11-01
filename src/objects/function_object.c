@@ -12,7 +12,9 @@ void init_function_object() {
 string_object* function_str(ray_object* self) {
     char *name = R_MALLOC_N(char, 23);
     sprintf(name, "<function %p>", self);
-    return new_string_object(name); 
+    string_object* str = new_string_object(name); 
+    R_FREE(name);
+    return str;
 }
 
 logic_block* function_invoke(ray_object* self, list_object* args) {
@@ -23,31 +25,36 @@ logic_block* function_invoke(ray_object* self, list_object* args) {
         ray_object* val = list_get(AS_OBJ(args), i);
         map_put(AS_OBJ(m), key, val);
     }
-    logic_block *lb = new_logic_block();
-    lb->head_block = lb->eval_block = lb->cb = f->code->eval_block;
-    lb->globals = f->code->globals;
-    lb->locals = m;
-    lb->consts = f->code->consts;
+
+    logic_block* lb = new_logic_block_from_exists(f->code, m);
+    DEC_REF(m);
     return lb;
 }
 
+void destruct_function_object(ray_object* o) {
+    function_object* self = AS_FUNCTION(o);
+    DEC_REF(self->code);
+    DEC_REF(self->arg_list);
+    R_FREE(self);
+}
+
 type_object function_type_object = {
-    &base_type_object,
+    INIT_HEADER(&base_type_object),
     "function",
     default_hash,
     default_equals,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    DEFAULT_BIN_OPS,
     function_str,
-    function_invoke
+    function_invoke,
+    destruct_function_object,
 };
 
 function_object* new_function_object(list_object* arg_list, logic_block* code, int arg_len) {
     function_object* f = NEW_OBJ(function_object);
-    f->type = &function_type_object;
+    INIT_OBJ_HEADER(f, function_type_object);
+    INC_REF(code);
     f->code = code;
+    INC_REF(arg_list);
     f->arg_list = arg_list;
     f->arg_len = arg_len;
     return f;

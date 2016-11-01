@@ -10,7 +10,7 @@ typedef ray_object* (*mul_func)(ray_object *, ray_object *);
 typedef ray_object* (*div_func)(ray_object *, ray_object *);
 typedef string_object* (*str_func)(ray_object *);
 typedef logic_block* (*invoke_func)(ray_object *, list_object*);
-
+typedef void (*destruct_func)(ray_object*);
 
 
 struct _type_object {
@@ -24,6 +24,7 @@ struct _type_object {
     div_func __div;
     str_func __str;
     invoke_func __invoke;
+    destruct_func __destruct;
 };
 
 
