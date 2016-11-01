@@ -11,7 +11,6 @@
         visit_exp(c, n->l);\
         visit_exp(c, n->r);\
         ADD_OP(c, OP_##op);\
-        DEC_REF(n);\
         break
 
 void destruct_ast_node(ray_object* o) {
@@ -90,6 +89,7 @@ void visit_exp(compiler *c, exp_node *node) {
         default:
             R_FATAL("Unknown operator type: %d", node->op->o);
         }
+        DEC_REF(n);
     }
     break;
     case EXP_TYPE_FACTOR:
@@ -136,10 +136,38 @@ void visit_factor(compiler *c, factor_node * node) {
 
 
 void visit_assign(compiler *c, assign_node * node) {
-    visit_statement(c, node->rval);
     int i = store_obj(c, AS_OBJ(node->lval));
-    DEC_REF(node->lval);
-    ADD_OP_ARG(c, STORE_NAME, i);
+    switch(node->atype) {
+    case ASSIGN_TYPE_STATEMENT:
+        visit_statement(c, node->rval);
+        DEC_REF(node->lval);
+        ADD_OP_ARG(c, STORE_NAME, i);
+        break;
+    case ASSIGN_TYPE_INC: 
+        {
+            ADD_OP_ARG(c, LOAD_NAME, i);
+            ray_object* const1 = AS_OBJ(new_number_object_from_long(1));
+            int j = store_obj(c, const1);
+            DEC_REF(const1);
+            ADD_OP_ARG(c, PUSH, j);
+            ADD_OP(c, OP_ADD);
+            ADD_OP_ARG(c, STORE_NAME, i);
+            break;
+        }
+    case ASSIGN_TYPE_DEC: 
+        {
+            ADD_OP_ARG(c, LOAD_NAME, i);
+            ray_object* const1 = AS_OBJ(new_number_object_from_long(1));
+            int j = store_obj(c, const1);
+            DEC_REF(const1);
+            ADD_OP_ARG(c, PUSH, j);
+            ADD_OP(c, OP_SUB);
+            ADD_OP_ARG(c, STORE_NAME, i);
+            break;
+        }
+    default:
+        R_FATAL("assign type %d error!\n", node->atype);
+    }
     DEC_REF(node);
 }
 void visit_if(compiler *c, if_statement_node *node) {
@@ -238,10 +266,8 @@ void visit_statement(compiler *c, statement_node * node) {
 }
 
 void code_gen(compiler *c, statement_list_node *node) {
-
     continue_compiler(c);
     visit_statement_list(c, node);
-    DEC_REF(node);
 
 }
 void visit_statement_list(compiler *c, statement_list_node * node) {

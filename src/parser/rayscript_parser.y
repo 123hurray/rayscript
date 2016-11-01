@@ -26,6 +26,7 @@ int yyerror();
 %token OPERATOR OP CP ASSIGN_TOKEN IDENTIFIER 
 %token EOL 
 %token COMMA ARROW_TOKEN
+%token INC_DEC_TOKEN
 %token IF_TOKEN ELSE_TOKEN LB RB SC 
 %token PRINT_TOKEN
 %token TYPE_TERM TYPE_FACTOR
@@ -37,6 +38,7 @@ int yyerror();
 %left RELATIONAL_TOKEN
 %left OPERATOR_1
 %left OPERATOR_2
+%left INC_DEC_TOKEN
 %union{
     statement_list_node* sln;
     if_statement_node* isn;
@@ -56,6 +58,7 @@ int yyerror();
     double fnum;
     long inum;
     operator_type op;
+    assign_type at;
 }
 %type <sln> program;
 %type <sln> statement_list;
@@ -75,6 +78,7 @@ int yyerror();
 %type <inum> INT_TOKEN;
 %type <b> BOOL_TOKEN;
 %type <str> IDENTIFIER;
+%type <at> INC_DEC_TOKEN;
 %type <op> EQUALITY_TOKEN;
 %type <op> RELATIONAL_TOKEN;
 %type <op> OPERATOR_1;
@@ -247,7 +251,6 @@ exp: factor {
     e->factor = $1;
     $$ = e;
 } 
-
 | exp EQUALITY_TOKEN exp {
     exp_node *e = MAKE_AST_NODE(exp_node);
     e->etype = EXP_TYPE_OP;
@@ -357,6 +360,15 @@ assign: IDENTIFIER ASSIGN_TOKEN statement {
     e->lval = new_string_object($1);
     R_FREE($1);
     e->rval = $3;
+    e->atype = ASSIGN_TYPE_STATEMENT;
+    $$ = e;
+}
+| INC_DEC_TOKEN IDENTIFIER {
+    assign_node* e = MAKE_AST_NODE(assign_node);
+    e->lval = new_string_object($2);
+    R_FREE($2);
+    e->rval = NULL;
+    e->atype = $1;
     $$ = e;
 }
 ;

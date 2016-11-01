@@ -8,6 +8,7 @@
 #include <rayscript.tab.h>
 #include <object.h>
 #include <allocator.h>
+#include <statement.h>
 
 #define yyalloc(s) _R_MALLOC(s)
 #define yyfree(p) _R_FREE(p)
@@ -103,12 +104,14 @@ static int mygetinput(char *buf, int max_size) {
 ","                                  { return COMMA;     }
 "and"                                { return AND_TOKEN; }
 "or"                                 { return OR_TOKEN;  }
-"=="                                 { yylval.op = OP_TYPE_EQ;return EQUALITY_TOKEN;}
-"!="                                 { yylval.op = OP_TYPE_NE;return EQUALITY_TOKEN;}
-">"                                  { yylval.op = OP_TYPE_GT; return RELATIONAL_TOKEN;}
-"<"                                  { yylval.op = OP_TYPE_LT; return RELATIONAL_TOKEN;}
-"<="                                  { yylval.op = OP_TYPE_LE; return RELATIONAL_TOKEN;}
-">="                                  { yylval.op = OP_TYPE_GE; return RELATIONAL_TOKEN;}
+"++"                                 { yylval.at = ASSIGN_TYPE_INC; return INC_DEC_TOKEN;}
+"--"                                 { yylval.at = ASSIGN_TYPE_DEC; return INC_DEC_TOKEN;}
+"=="                                 { yylval.op = OP_TYPE_EQ;  return EQUALITY_TOKEN;}
+"!="                                 { yylval.op = OP_TYPE_NE;  return EQUALITY_TOKEN;}
+">"                                  { yylval.op = OP_TYPE_GT;  return RELATIONAL_TOKEN;}
+"<"                                  { yylval.op = OP_TYPE_LT;  return RELATIONAL_TOKEN;}
+"<="                                 { yylval.op = OP_TYPE_LE;  return RELATIONAL_TOKEN;}
+">="                                 { yylval.op = OP_TYPE_GE;  return RELATIONAL_TOKEN;}
 "{"                                  { return LB;     }
 "}"                                  { return RB;     }
 ";"                                  { return SC;     }

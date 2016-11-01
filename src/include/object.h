@@ -86,7 +86,7 @@ struct _ray_object {
     if((o) != NULL) {\
         (o)->refcnt--; \
         R_DEBUG_GC("DEC_REF:%s %p %d in %s:%d\n", OBJ_GET_TYPE_NAME(o), (o), (o)->refcnt, __FILE__,__LINE__);\
-        /*assert((o)->refcnt >=0);*/\
+        assert((o)->refcnt >=0);\
         if((o)->refcnt == 0) {\
             (o)->type->__destruct(AS_OBJ(o));\
         }\

@@ -37,8 +37,14 @@ typedef enum {
     OP_TYPE_ADD,
     OP_TYPE_SUB,
     OP_TYPE_MUL,
-    OP_TYPE_DIV
+    OP_TYPE_DIV,
 } operator_type;
+
+typedef enum {
+    ASSIGN_TYPE_STATEMENT,
+    ASSIGN_TYPE_INC,
+    ASSIGN_TYPE_DEC,
+} assign_type;
 
 typedef enum {
     EXP_TYPE_FACTOR,
@@ -143,9 +149,12 @@ struct _factor_node {
         exp_node* exp;
     };
 };
+
+
 struct _assign_node {
     AST_HEADER;
     string_object * lval;
+    assign_type atype;
     statement_node * rval;
 };
 
