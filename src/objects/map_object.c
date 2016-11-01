@@ -65,14 +65,14 @@ map_object *new_map_object(int size) {
 }
 
 
-entry_object *new_entry_object(ray_object *key, ray_object *val) {
+entry_object *new_entry_object(ray_object *key, ray_object *val, long hash) {
     entry_object * entry = NEW_OBJ(entry_object);
     INIT_OBJ_HEADER(entry, entry_object_type);
     INC_REF(key);
     entry->key = key;
     INC_REF(val);
     entry->val = val;
-    entry->hash = key->type->__hash(key);
+    entry->hash = hash;
     entry->next = NULL;
     return entry;
 }
@@ -80,8 +80,25 @@ entry_object *new_entry_object(ray_object *key, ray_object *val) {
 
 void map_put(ray_object *self, ray_object *key, ray_object *val) {
     map_object *map = OBJ_AS_MAP_OBJ(self);
-    entry_object *entry = new_entry_object(key, val);
-    long hash = entry->hash;
+    long hash = OBJ_HASH(key);
+    int index = hash % map->allocated;
+    // Check if exists
+    entry_object* it = (entry_object *)map->table[index];
+    while(it) {
+        if(it->hash == hash && OBJ_EQ(it->key, key)) {
+            DEC_REF(it->val);
+            INC_REF(val);
+            // Replace value
+            it->val = val;
+            return;
+        }
+        it = it->next;
+    }
+    // Not found, insert
+    
+    entry_object *entry = new_entry_object(key, val, hash);
+
+
     if(map->size >= map->allocated * MAP_LOAD_FACTOR) {
         int old_size = map->allocated;
         map->allocated *= MAP_SCALE_FACTOR;
@@ -106,7 +123,6 @@ void map_put(ray_object *self, ray_object *key, ray_object *val) {
         R_FREE(map->table);
         map->table = new_table;
     }
-    int index = entry->hash % map->allocated;
     entry->next = map->table[index];
     map->table[index] = entry;
     ++map->size;

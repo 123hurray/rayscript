@@ -65,9 +65,9 @@ struct _ray_object {
 };
 
 #define ENABLE_GC
-
+//#define GC_DEBUG
 #ifdef GC_DEBUG
-#define R_DEBUG_GC(v, ...) R_DEBUG(v, ##__VA_ARGS__)
+#define R_DEBUG_GC(v, ...) printf(v, ##__VA_ARGS__)
 #else
 #define R_DEBUG_GC(v, ...)
 #endif
@@ -150,6 +150,7 @@ void default_destruct(ray_object*);
 #define OBJ_IS_FALSE(o) ((bool_object*)(o) == p_bool_false)
 #define OBJ_IS_NIL(o) ((o) == (ray_object*)nil)
 
+#define OBJ_HASH(o) ((o)->type->__hash(AS_OBJ(o)))
 
 #define OBJ_ADD(o1, o2) ((o1)->type->__add((ray_object*)(o1), (ray_object*)(o2))) 
 #define OBJ_SUB(o1, o2) ((o1)->type->__sub((ray_object*)(o1), (ray_object*)(o2))) 

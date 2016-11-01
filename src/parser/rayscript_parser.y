@@ -442,6 +442,7 @@ void normal_mode() {
     continue_compiler(c);
     if(root) {
         visit_statement_list(c, root);
+        root = NULL;
 #ifdef PARSE_DEBUG
         R_DEBUG("******op code generated!******\n");
 #endif
