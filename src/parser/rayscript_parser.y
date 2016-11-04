@@ -210,11 +210,20 @@ call_arg_list: {
 
 call_function: IDENTIFIER OP call_arg_list CP {
     call_function_node* e = MAKE_AST_NODE(call_function_node);
+    e->ftype = CALL_FUNCTION_TYPE_BY_NAME;
     e->name = new_string_object($1);
     R_FREE($1);
     e->args = $3;
     $$ = e;
 }
+| OP exp CP OP call_arg_list CP {
+    call_function_node* e = MAKE_AST_NODE(call_function_node);
+    e->ftype = CALL_FUNCTION_TYPE_BY_EXP;
+    e->exp = $2;
+    e->args = $5;
+    $$ = e;
+}
+
 ;
 
 

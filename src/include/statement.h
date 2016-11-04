@@ -28,6 +28,10 @@ typedef enum {
 } factor_type;
 
 typedef enum {
+    CALL_FUNCTION_TYPE_BY_NAME,
+    CALL_FUNCTION_TYPE_BY_EXP,
+} call_function_type;
+typedef enum {
     OP_TYPE_EQ,
     OP_TYPE_NE,
     OP_TYPE_LT,
@@ -121,7 +125,11 @@ struct _function_node {
 
 struct _call_function_node {
     AST_HEADER;
-    string_object* name;
+    call_function_type ftype;
+    union {
+        string_object* name;
+        exp_node* exp;
+    };
     call_arg_node* args; 
 };
 

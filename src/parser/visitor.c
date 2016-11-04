@@ -62,11 +62,21 @@ void visit_call_function(compiler* c, call_function_node* node) {
         visit_exp(c, e);
     }
     DEC_REF(l);
-    int i = store_obj(c, AS_OBJ(node->name));
-    ADD_OP_ARG(c, LOAD_NAME, i);
+    int i;
+    switch(node->ftype) {
+    case CALL_FUNCTION_TYPE_BY_NAME:
+        i = store_obj(c, AS_OBJ(node->name));
+        ADD_OP_ARG(c, LOAD_NAME, i);
+        DEC_REF(node->name);
+        break;
+    case CALL_FUNCTION_TYPE_BY_EXP:
+        visit_exp(c, node->exp);
+        break;
+    default:
+        R_FATAL("call function type %d error!\n", node->ftype);
+    }
     ADD_OP_INVOKE(c, INVOKE, size);
     DEC_REF(node->args);
-    DEC_REF(node->name);
     DEC_REF(node);
 }
 

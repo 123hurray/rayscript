@@ -26,10 +26,12 @@ src/parser/rayscript_lexer.c
 src/parser/rayscript_parser.c
 src/include/rayscript.tab.h
 src/include/config.h
-test*.rs
+*.rs
 *.py
 *.output
 rayscript
 debug_lexer
 /.*
 rs
+*/vgcore*
+.gdb_history
